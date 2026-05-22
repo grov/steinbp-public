@@ -1,0 +1,55 @@
+services:
+
+  pocketbase:
+    build:
+      context: .
+      dockerfile: Dockerfile.pocketbase
+      args:
+        PB_VERSION: ${PB_VERSION}
+    volumes:
+      - pocketbase_data:/pb/pb_data
+    networks:
+      - internal
+    restart: unless-stopped
+
+  steinbp:
+    build:
+      context: .
+      args:
+        VITE_POCKETBASE_URL: ${VITE_POCKETBASE_URL}
+    depends_on:
+      - pocketbase
+    networks:
+      - traefik
+      - internal
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.${APP_NAME}.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.${APP_NAME}.entrypoints=web"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.${APP_NAME}.middlewares=redirect-to-https@docker"
+      - "traefik.http.routers.${APP_NAME}-secured.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.${APP_NAME}-secured.entrypoints=web-secure"
+      - "traefik.http.routers.${APP_NAME}-secured.tls=true"
+      - "traefik.http.routers.${APP_NAME}-secured.tls.certresolver=${TRAEFIK_CERT_RESOLVER}"
+      - "traefik.http.routers.${APP_NAME}-secured.middlewares=${TRAEFIK_SECURED_MIDDLEWARES}"
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "traefik.http.middlewares.${APP_NAME}-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.${APP_NAME}-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.${APP_NAME}-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.${APP_NAME}-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.${APP_NAME}-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.${APP_NAME}-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.${APP_NAME}-headers.headers.permissionsPolicy=camera=(), microphone=(), geolocation=()"
+      - "traefik.http.middlewares.${APP_NAME}-headers.headers.contentSecurityPolicy=default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+
+networks:
+  traefik:
+    external: true
+  internal:
+    driver: bridge
+
+volumes:
+  pocketbase_data:

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yoann\\\\Documents\\\\Projects\\\\steinbp\" -Directory)",
+      "Bash(Select-Object Name)",
+      "PowerShell(cd \"C:\\\\Users\\\\yoann\\\\Documents\\\\Projects\\\\steinbp\"; \\(Get-Item logo.png\\).Length / 1KB; ls public -ErrorAction SilentlyContinue; ls src\\\\assets -ErrorAction SilentlyContinue)",
+      "PowerShell(New-Item *)",
+      "PowerShell(ffmpeg *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yoann\\\\Documents\\\\Projects\\\\steinbp\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(npm run *)",
+      "Bash(node -e ' *)",
+      "Bash(npm uninstall *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yoann\\\\Documents\\\\Projects\\\\steinbp\" -Recurse -Depth 2)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Remove-Item *)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yoann\\\\Documents\\\\Projects\\\\steinbp-public\" -Recurse -Force)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(grep -r \"[a-zA-Z0-9._%+-]\\\\+@[a-zA-Z0-9.-]\\\\+\\\\.[a-zA-Z]\\\\{2,\\\\}\" \"C:\\\\Users\\\\yoann\\\\Documents\\\\Projects\\\\steinbp-public\" --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" --include=\"*.json\" --exclude-dir=node_modules --exclude-dir=dist)"
+    ]
+  }
+}

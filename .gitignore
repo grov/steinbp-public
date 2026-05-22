@@ -1,0 +1,21 @@
+# Dépendances
+node_modules/
+
+# Build
+dist/
+
+# Environnement — ne jamais committer
+.env
+.env.*
+!.env.example
+!.env.traefik.example
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PocketBase — données locales (ne pas committer)
+pocketbase/pb_data/
