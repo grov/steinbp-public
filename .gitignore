@@ -13,6 +13,10 @@ dist/
 # Logs
 *.log
 
+# IDE / outils locaux
+.claude/
+.vscode/
+
 # OS
 .DS_Store
 Thumbs.db
