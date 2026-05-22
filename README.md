@@ -94,6 +94,62 @@ Les joueurs s'inscrivent via `/register` (email + mot de passe + pseudo). Le com
 
 ---
 
+## Sécurité
+
+### 1. Changer les credentials par défaut
+
+Après la première connexion, modifiez immédiatement le compte superadmin créé automatiquement (`little@local.com` / `littlestein`) :
+
+- Dans le panel PocketBase (`/_/`) → icône profil (bas à gauche) → **"Edit profile"**
+- Changez l'email et le mot de passe
+
+### 2. Activer le MFA sur le superadmin PocketBase
+
+Le panel `/_/` donne un accès total à la base de données. Il est fortement recommandé d'y activer l'authentification à deux facteurs (TOTP) :
+
+1. Connectez-vous au panel PocketBase (`/_/`)
+2. Cliquez sur l'icône profil en bas à gauche
+3. Sélectionnez **"Two-factor authentication"**
+4. Scannez le QR code avec une application TOTP (Google Authenticator, Authy, 2FAS…)
+5. Confirmez avec le code généré
+
+À partir de ce moment, chaque connexion au panel demande le code TOTP en plus du mot de passe.
+
+### 3. Restreindre l'accès au panel d'administration
+
+Une fois la configuration initiale terminée, il est conseillé de bloquer l'accès public à `/_/`. Modifiez `nginx.conf` pour le restreindre à votre réseau local :
+
+```nginx
+location ~ ^/_/ {
+    allow 192.168.1.0/24;  # adaptez à votre réseau local
+    deny all;
+    proxy_pass http://pocketbase:8090;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+```
+
+Puis reconstruisez l'image : `docker compose build steinbp && docker compose up -d`
+
+### 4. Sauvegarder les données régulièrement
+
+Toutes les données sont dans le volume Docker `pocketbase_data`. Pour faire une sauvegarde :
+
+```bash
+docker run --rm \
+  -v steinbp-public_pocketbase_data:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/pocketbase_backup_$(date +%Y%m%d).tar.gz -C /data .
+```
+
+Automatisez cette commande via un cron job sur votre serveur.
+
+### 5. Maintenir PocketBase à jour
+
+Les mises à jour de PocketBase corrigent régulièrement des failles de sécurité. Consultez les [releases](https://github.com/pocketbase/pocketbase/releases) et mettez à jour `PB_VERSION` dans votre `.env` dès qu'une nouvelle version est disponible.
+
+---
+
 ## Stack technique
 
 | Élément | Technologie |
