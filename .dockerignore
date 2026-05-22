@@ -2,3 +2,4 @@ node_modules
 dist
 .env
 .env.*
+pocketbase/pb_data

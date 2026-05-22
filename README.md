@@ -109,34 +109,18 @@ Les joueurs s'inscrivent via `/register` (email + mot de passe + pseudo). Le com
 
 ## Première installation
 
-### 1. Créer le super-admin PocketBase
+Au premier démarrage, un compte super-admin PocketBase est automatiquement créé :
 
-Au premier démarrage, PocketBase génère une URL d'initialisation dans ses logs. Récupérez-la avec :
+| Champ | Valeur |
+|-------|--------|
+| Email | `little@local.com` |
+| Mot de passe | `littlestein` |
 
-```bash
-docker compose logs pocketbase
-```
+Ce compte donne accès au panel d'administration de la base de données sur `http://<votre-serveur>:<APP_PORT>/_/`.
 
-Vous verrez une ligne de ce type :
+> **Important :** Changez ce mot de passe depuis le panel PocketBase (`/_/` → icône profil) après la première connexion.
 
-```
-http://0.0.0.0:8090/_/#/pbinstall/<token>
-```
-
-Cette URL contient le port interne du container (`8090`). Pour y accéder depuis votre navigateur, remplacez `0.0.0.0:8090` par l'IP de votre serveur et le port configuré dans `APP_PORT` (par défaut `80`) :
-
-```
-http://<ip-serveur>:<APP_PORT>/_/#/pbinstall/<token>
-```
-
-Exemple avec `APP_PORT=8083` sur un serveur local :
-```
-http://192.168.1.45:8083/_/#/pbinstall/<token>
-```
-
-Ouvrez cette URL dans un navigateur pour créer le compte super-admin PocketBase. Ce compte donne accès au panel d'administration de la base de données (`/_/`).
-
-### 2. Créer le premier utilisateur admin de l'application
+### Créer le premier utilisateur admin de l'application
 
 Connectez-vous au panel PocketBase (`/_/`), ouvrez la collection **users** et créez un enregistrement avec les champs suivants :
 
@@ -149,7 +133,7 @@ Connectez-vous au panel PocketBase (`/_/`), ouvrez la collection **users** et cr
 | `status` | `approved` |
 | `role` | `admin` |
 
-### 3. Gérer les utilisateurs suivants
+### Gérer les utilisateurs suivants
 
 Une fois connecté en tant qu'admin, tous les utilisateurs peuvent être approuvés et leur rôle modifié directement depuis l'interface `/admin` de l'application — plus besoin de passer par PocketBase.
 
