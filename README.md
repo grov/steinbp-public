@@ -123,7 +123,18 @@ Vous verrez une ligne de ce type :
 http://0.0.0.0:8090/_/#/pbinstall/<token>
 ```
 
-Remplacez `0.0.0.0` par l'IP de votre serveur (ou `localhost`) et ouvrez l'URL dans un navigateur pour créer le compte super-admin PocketBase. Ce compte donne accès au panel d'administration de la base de données (`/_/`).
+Cette URL contient le port interne du container (`8090`). Pour y accéder depuis votre navigateur, remplacez `0.0.0.0:8090` par l'IP de votre serveur et le port configuré dans `APP_PORT` (par défaut `80`) :
+
+```
+http://<ip-serveur>:<APP_PORT>/_/#/pbinstall/<token>
+```
+
+Exemple avec `APP_PORT=8083` sur un serveur local :
+```
+http://192.168.1.45:8083/_/#/pbinstall/<token>
+```
+
+Ouvrez cette URL dans un navigateur pour créer le compte super-admin PocketBase. Ce compte donne accès au panel d'administration de la base de données (`/_/`).
 
 ### 2. Créer le premier utilisateur admin de l'application
 
