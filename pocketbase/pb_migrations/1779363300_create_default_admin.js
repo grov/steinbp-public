@@ -8,8 +8,7 @@ migrate((app) => {
   record.set("display_name", "Administrateur")
   record.set("status", "approved")
   record.set("role", "admin")
-  record.set("password", "littlestein")
-  record.set("passwordConfirm", "littlestein")
+  record.setPassword("littlestein")
 
   return app.save(record)
 }, (app) => {
