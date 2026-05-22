@@ -9,7 +9,5 @@ RUN wget -qO /tmp/pb.zip \
 
 WORKDIR /pb
 COPY pocketbase/pb_migrations /pb/pb_migrations
-COPY pocketbase/entrypoint.sh /pb/entrypoint.sh
-RUN chmod +x /pb/entrypoint.sh
 EXPOSE 8090
-CMD ["/pb/entrypoint.sh"]
+CMD ["sh", "-c", "./pocketbase superuser upsert little@local.com littlestein && exec ./pocketbase serve --http=0.0.0.0:8090"]
