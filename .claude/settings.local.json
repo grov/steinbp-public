@@ -19,7 +19,8 @@
       "WebFetch(domain:api.github.com)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yoann\\\\Documents\\\\Projects\\\\steinbp-public\" -Recurse -Force)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(grep -r \"[a-zA-Z0-9._%+-]\\\\+@[a-zA-Z0-9.-]\\\\+\\\\.[a-zA-Z]\\\\{2,\\\\}\" \"C:\\\\Users\\\\yoann\\\\Documents\\\\Projects\\\\steinbp-public\" --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" --include=\"*.json\" --exclude-dir=node_modules --exclude-dir=dist)"
+      "Bash(grep -r \"[a-zA-Z0-9._%+-]\\\\+@[a-zA-Z0-9.-]\\\\+\\\\.[a-zA-Z]\\\\{2,\\\\}\" \"C:\\\\Users\\\\yoann\\\\Documents\\\\Projects\\\\steinbp-public\" --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" --include=\"*.json\" --exclude-dir=node_modules --exclude-dir=dist)",
+      "Bash(xargs grep -l \"admin\\\\|isManager\\\\|role\")"
     ]
   }
 }

@@ -107,6 +107,27 @@ Les joueurs s'inscrivent via `/register` (email + mot de passe + pseudo). Le com
 
 ---
 
+## Première installation
+
+Au premier démarrage, une migration crée automatiquement un compte administrateur par défaut :
+
+| Champ | Valeur |
+|-------|--------|
+| Email | `admin@steinbp.local` |
+| Mot de passe | `littlestein` |
+
+> **Important :** Changez ce mot de passe dès la première connexion via la page profil de l'application.
+
+### Initialiser le super-admin PocketBase
+
+Accédez au panel d'administration de PocketBase à l'adresse `http://localhost/_/` (ou `https://votre-domaine/_/` en production) et créez un compte lors du premier accès. Ce compte sert uniquement à administrer la base de données — il est distinct des utilisateurs de l'application.
+
+### Gérer les utilisateurs suivants
+
+Une fois connecté en tant qu'admin, tous les utilisateurs peuvent être approuvés et leur rôle modifié directement depuis l'interface `/admin` de l'application.
+
+---
+
 ## Déploiement
 
 ### Sans Traefik — test local
