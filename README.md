@@ -109,22 +109,38 @@ Les joueurs s'inscrivent via `/register` (email + mot de passe + pseudo). Le com
 
 ## Première installation
 
-Au premier démarrage, une migration crée automatiquement un compte administrateur par défaut :
+### 1. Créer le super-admin PocketBase
+
+Au premier démarrage, PocketBase génère une URL d'initialisation dans ses logs. Récupérez-la avec :
+
+```bash
+docker compose logs pocketbase
+```
+
+Vous verrez une ligne de ce type :
+
+```
+http://0.0.0.0:8090/_/#/pbinstall/<token>
+```
+
+Remplacez `0.0.0.0` par l'IP de votre serveur (ou `localhost`) et ouvrez l'URL dans un navigateur pour créer le compte super-admin PocketBase. Ce compte donne accès au panel d'administration de la base de données (`/_/`).
+
+### 2. Créer le premier utilisateur admin de l'application
+
+Connectez-vous au panel PocketBase (`/_/`), ouvrez la collection **users** et créez un enregistrement avec les champs suivants :
 
 | Champ | Valeur |
 |-------|--------|
-| Email | `admin@steinbp.local` |
-| Mot de passe | `littlestein` |
+| `email` | votre email |
+| `password` | votre mot de passe |
+| `username` | votre pseudo |
+| `display_name` | votre nom affiché |
+| `status` | `approved` |
+| `role` | `admin` |
 
-> **Important :** Changez ce mot de passe dès la première connexion via la page profil de l'application.
+### 3. Gérer les utilisateurs suivants
 
-### Initialiser le super-admin PocketBase
-
-Accédez au panel d'administration de PocketBase à l'adresse `http://localhost/_/` (ou `https://votre-domaine/_/` en production) et créez un compte lors du premier accès. Ce compte sert uniquement à administrer la base de données — il est distinct des utilisateurs de l'application.
-
-### Gérer les utilisateurs suivants
-
-Une fois connecté en tant qu'admin, tous les utilisateurs peuvent être approuvés et leur rôle modifié directement depuis l'interface `/admin` de l'application.
+Une fois connecté en tant qu'admin, tous les utilisateurs peuvent être approuvés et leur rôle modifié directement depuis l'interface `/admin` de l'application — plus besoin de passer par PocketBase.
 
 ---
 
