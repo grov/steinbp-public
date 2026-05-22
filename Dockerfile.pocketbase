@@ -8,5 +8,6 @@ RUN wget -qO /tmp/pb.zip \
     && rm /tmp/pb.zip
 
 WORKDIR /pb
+COPY pocketbase/pb_migrations /pb/pb_migrations
 EXPOSE 8090
 CMD ["./pocketbase", "serve", "--http=0.0.0.0:8090"]
