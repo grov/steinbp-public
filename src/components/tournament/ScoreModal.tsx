@@ -167,7 +167,7 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
                 <span className="text-xl leading-none">💥</span>
                 <div className="flex-1">
                   <p className="font-bold text-sm">GAME OVER</p>
-                  <p className="text-xs opacity-60">Les deux balles dans le même verre</p>
+                  <p className="text-xs opacity-60">2 balles dans le même verre</p>
                 </div>
                 <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all
                   ${specialEvents.game_over
@@ -183,7 +183,7 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
               <SpecialEventCounter
                 emoji="🔄"
                 label="BALLS BACK"
-                description="Les deux balles dans des verres différents"
+                description="2 balles dans des verres différents"
                 value={specialEvents.balls_back_count}
                 onChange={(v) => updateEvent('balls_back_count', v)}
               />
@@ -251,7 +251,7 @@ function SpecialEventCounter({
       <span className="text-xl leading-none">{emoji}</span>
       <div className="flex-1 min-w-0">
         <p className={`font-bold text-sm ${isActive ? 'text-white' : ''}`}>{label}</p>
-        <p className="text-xs opacity-60 truncate">{description}</p>
+        <p className="text-xs opacity-60">{description}</p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <button
