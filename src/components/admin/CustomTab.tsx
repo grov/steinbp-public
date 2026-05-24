@@ -22,6 +22,24 @@ const STAT_OPTIONS: { value: BadgeStat; label: string }[] = [
   { value: 'game_over_count',    label: 'Game Over'       },
 ]
 
+// Ordre d'affichage des groupes + labels affichés dans les séparateurs
+const STAT_GROUP_ORDER: BadgeStat[] = [
+  'matches_played', 'matches_won', 'win_rate',
+  'tournaments_played', 'tournaments_won',
+  'balls_back_count', 'bounce_count', 'trickshot_count', 'game_over_count',
+]
+const STAT_GROUP_LABEL: Record<BadgeStat, string> = {
+  matches_played:     '🎮 Matchs joués',
+  matches_won:        '🏆 Matchs gagnés',
+  win_rate:           '📈 Win rate',
+  tournaments_played: '🏟️ Tournois joués',
+  tournaments_won:    '🥇 Tournois gagnés',
+  balls_back_count:   '🎱 Balls Back',
+  bounce_count:       '🏓 Rebonds',
+  trickshot_count:    '🎪 Trickshots',
+  game_over_count:    '💥 Game Over',
+}
+
 // ── Composant principal ───────────────────────────────────────
 
 /** Génère un identifiant stable pour un rang dans le state local */
@@ -77,19 +95,18 @@ export function CustomTab() {
 
   // ── Badges ─────────────────────────────────────────────────
 
-  function updateBadge(idx: number, field: keyof BadgeConfig, value: string | number) {
-    setDraft(prev => {
-      const badges = [...prev.badges]
-      badges[idx] = { ...badges[idx], [field]: value }
-      return { ...prev, badges }
-    })
+  function updateBadge(id: string, field: keyof BadgeConfig, value: string | number) {
+    setDraft(prev => ({
+      ...prev,
+      badges: prev.badges.map(b => b.id === id ? { ...b, [field]: value } : b),
+    }))
     setSaved(false)
   }
 
-  function deleteBadge(idx: number) {
+  function deleteBadge(id: string) {
     setDraft(prev => ({
       ...prev,
-      badges: prev.badges.filter((_, i) => i !== idx),
+      badges: prev.badges.filter(b => b.id !== id),
     }))
     setSaved(false)
   }
@@ -257,15 +274,33 @@ export function CustomTab() {
           Débloqués quand la statistique choisie atteint le seuil défini.
         </p>
 
-        <div className="flex flex-col gap-2 mb-3">
-          {draft.badges.map((badge, idx) => (
-            <BadgeRow
-              key={badge.id}
-              badge={badge}
-              onChange={(field, value) => updateBadge(idx, field, value)}
-              onDelete={() => deleteBadge(idx)}
-            />
-          ))}
+        <div className="flex flex-col gap-4 mb-3">
+          {STAT_GROUP_ORDER
+            .map(stat => ({
+              stat,
+              badges: draft.badges
+                .filter(b => b.stat === stat)
+                .sort((a, b) => a.threshold - b.threshold),
+            }))
+            .filter(g => g.badges.length > 0)
+            .map(g => (
+              <div key={g.stat}>
+                <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold mb-1.5 pl-1">
+                  {STAT_GROUP_LABEL[g.stat]}
+                </p>
+                <div className="flex flex-col gap-2">
+                  {g.badges.map(badge => (
+                    <BadgeRow
+                      key={badge.id}
+                      badge={badge}
+                      onChange={(field, value) => updateBadge(badge.id, field, value)}
+                      onDelete={() => deleteBadge(badge.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          }
         </div>
 
         <button
