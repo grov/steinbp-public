@@ -6,7 +6,7 @@ import type { MatchWithRelations } from '../types/database'
 
 /**
  * Écran public (TV / tablette en salle).
- * Lecture seule, temps réel via Supabase Realtime.
+ * Lecture seule — mise à jour automatique via PocketBase Realtime (WebSockets).
  * Optimisé pour une lecture à distance : texte grand, contraste élevé.
  */
 export function PublicDisplayScreen() {
