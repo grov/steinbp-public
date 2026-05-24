@@ -155,7 +155,21 @@ Phase de groupes avec classement (victoires, différence de gobelets), suivie d'
 
 ## Écran public
 
-Chaque tournoi dispose d'une **URL publique** (`/display/:id`) affichable sur grand écran ou TV pour suivre le bracket en direct, sans connexion requise.
+Chaque tournoi dispose d'une **URL publique** affichable sur grand écran ou TV pour suivre le bracket en direct, sans connexion requise.
+
+### Obtenir le lien
+
+Depuis le dashboard d'un tournoi, un bouton **📺 Lien TV** est disponible en haut à droite du header. Un clic copie automatiquement l'URL dans le presse-papier.
+
+### Format de l'URL
+
+L'application utilisant un HashRouter, l'URL a toujours la forme :
+
+```
+https://votre-domaine/#/display/<id-du-tournoi>
+```
+
+> ⚠️ Le `#` est obligatoire — sans lui, Nginx reçoit la requête directement et retourne une erreur 404. Utilisez toujours le bouton **📺 Lien TV** du dashboard pour éviter cette confusion.
 
 ---
 
@@ -357,6 +371,8 @@ Les releases disponibles sont listées sur [github.com/pocketbase/pocketbase/rel
 - 🎯 Règles spéciales intégrées à la saisie des scores (Balls Back, Game Over, Rebond, Trickshot)
 - 🦸 Profil joueur entièrement redesigné (style RPG, avatar hexagonal, statistiques détaillées)
 - 🔄 Badges groupés par catégorie et triés par seuil dans l'interface admin
+- 📺 Bouton "Lien TV" dans le dashboard pour copier l'URL de l'écran public en un clic
+- 🖼️ Logo officiel affiché sur l'écran public (remplacement de l'emoji 🏓)
 
 ### v1.0
 - 🏆 Gestion de tournois (élimination directe, poules + arbre)

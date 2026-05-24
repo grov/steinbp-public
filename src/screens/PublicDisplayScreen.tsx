@@ -29,7 +29,10 @@ export function PublicDisplayScreen() {
       {/* Header */}
       <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className="text-3xl font-black text-brand">🏓 SteinBP</span>
+          <div className="flex items-center gap-2">
+            <img src="/logo-banner.png" alt="SteinBP" className="h-10 w-10 object-contain" />
+            <span className="text-2xl font-black text-brand">SteinBP</span>
+          </div>
           <span className="text-zinc-400 text-xl">|</span>
           <span className="text-white text-xl font-bold">{tournament.name}</span>
         </div>

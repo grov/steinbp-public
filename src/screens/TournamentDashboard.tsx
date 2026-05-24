@@ -23,6 +23,15 @@ export function TournamentDashboard() {
   const [editMatch, setEditMatch] = useState<MatchWithRelations | null>(null)
   const [locallyStarted, setLocallyStarted] = useState(false)
   const [locallyFinished, setLocallyFinished] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  function handleCopyDisplayLink() {
+    const url = `${window.location.origin}/#/display/${id}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   if (loading || !tournament) {
     return (
@@ -88,6 +97,20 @@ export function TournamentDashboard() {
               <span>{tables.length} tables</span>
             </div>
           </div>
+
+          {/* Lien écran TV */}
+          <button
+            onClick={handleCopyDisplayLink}
+            title="Copier le lien pour l'écran TV"
+            className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border transition-all text-xs font-medium shrink-0 ${
+              copied
+                ? 'bg-green-500/10 border-green-500/40 text-green-400'
+                : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'
+            }`}
+          >
+            <span className="text-lg leading-none">📺</span>
+            <span>{copied ? 'Copié !' : 'Lien TV'}</span>
+          </button>
 
         </div>
       </header>
