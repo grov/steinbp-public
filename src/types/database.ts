@@ -64,6 +64,13 @@ export interface GroupStanding {
   created: string
 }
 
+export interface SpecialEvents {
+  game_over: boolean
+  balls_back_count: number
+  bounce_count: number
+  trickshot_count: number
+}
+
 export interface Match {
   id: string
   tournament_id: string
@@ -82,6 +89,11 @@ export interface Match {
   started_at: string | null
   finished_at: string | null
   created: string
+  // Règles spéciales
+  game_over: boolean
+  balls_back_count: number
+  bounce_count: number
+  trickshot_count: number
 }
 
 // ── Types enrichis (avec relations jointes) ───────────────────
@@ -147,4 +159,5 @@ export interface CreateTeamPayload {
 export interface ScorePayload {
   winner_id: string
   winner_cups_remaining: number
+  special_events?: Partial<SpecialEvents>
 }

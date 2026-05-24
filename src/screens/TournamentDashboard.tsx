@@ -9,7 +9,7 @@ import { GroupStandings } from '../components/tournament/GroupStandings'
 import { SettingsTab } from '../components/tournament/SettingsTab'
 import { StatsTab } from '../components/tournament/StatsTab'
 import { TournamentStatusBadge } from '../components/ui/Badge'
-import type { MatchWithRelations } from '../types/database'
+import type { MatchWithRelations, SpecialEvents } from '../types/database'
 
 type Tab = 'queue' | 'bracket' | 'standings' | 'stats' | 'config'
 
@@ -45,9 +45,9 @@ export function TournamentDashboard() {
     silentReload()
   }
 
-  async function handleEnterScore(winnerId: string, cupsRemaining: number) {
+  async function handleEnterScore(winnerId: string, cupsRemaining: number, specialEvents: SpecialEvents) {
     if (!scoreMatch) return
-    await finishMatch(scoreMatch, winnerId, cupsRemaining, tournament!.cups_per_side)
+    await finishMatch(scoreMatch, winnerId, cupsRemaining, tournament!.cups_per_side, specialEvents)
     silentReload()
   }
 
@@ -56,9 +56,9 @@ export function TournamentDashboard() {
     silentReload()
   }
 
-  async function handleEditScore(winnerId: string, cupsRemaining: number) {
+  async function handleEditScore(winnerId: string, cupsRemaining: number, specialEvents: SpecialEvents) {
     if (!editMatch) return
-    await editMatchResult(editMatch, winnerId, cupsRemaining, tournament!.cups_per_side)
+    await editMatchResult(editMatch, winnerId, cupsRemaining, tournament!.cups_per_side, specialEvents)
     silentReload()
   }
 

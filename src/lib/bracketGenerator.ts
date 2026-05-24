@@ -56,6 +56,10 @@ function recordToMatch(record: RecordModel): Match {
     started_at: (record['started_at'] as string) || null,
     finished_at: (record['finished_at'] as string) || null,
     created: record.created,
+    game_over: (record['game_over'] as boolean) ?? false,
+    balls_back_count: (record['balls_back_count'] as number) ?? 0,
+    bounce_count: (record['bounce_count'] as number) ?? 0,
+    trickshot_count: (record['trickshot_count'] as number) ?? 0,
   }
 }
 

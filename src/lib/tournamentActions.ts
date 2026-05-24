@@ -17,6 +17,7 @@ import type {
   GroupWithStandings,
   Match,
   MatchWithRelations,
+  SpecialEvents,
   Team,
   Tournament,
 } from '../types/database'
@@ -83,6 +84,11 @@ function recordToMatch(r: RecordModel): Match {
     started_at: (r['started_at'] as string) || null,
     finished_at: (r['finished_at'] as string) || null,
     created: r.created,
+    // Règles spéciales
+    game_over: (r['game_over'] as boolean) ?? false,
+    balls_back_count: (r['balls_back_count'] as number) ?? 0,
+    bounce_count: (r['bounce_count'] as number) ?? 0,
+    trickshot_count: (r['trickshot_count'] as number) ?? 0,
   }
 }
 
@@ -205,12 +211,17 @@ export async function finishMatch(
   winnerId: string,
   winnerCupsRemaining: number,
   cupsPerSide: number,
+  specialEvents?: Partial<SpecialEvents>,
 ): Promise<void> {
   await pb.collection('matches').update(match.id, {
     winner_id: winnerId,
     winner_cups_remaining: winnerCupsRemaining,
     status: 'finished',
     finished_at: new Date().toISOString(),
+    game_over: specialEvents?.game_over ?? false,
+    balls_back_count: specialEvents?.balls_back_count ?? 0,
+    bounce_count: specialEvents?.bounce_count ?? 0,
+    trickshot_count: specialEvents?.trickshot_count ?? 0,
   })
 
   if (match.table_id) {
@@ -235,12 +246,17 @@ export async function editMatchResult(
   newWinnerId: string,
   newCupsRemaining: number,
   cupsPerSide: number,
+  specialEvents?: Partial<SpecialEvents>,
 ): Promise<void> {
   const oldWinnerId = match.winner_id
 
   await pb.collection('matches').update(match.id, {
     winner_id: newWinnerId,
     winner_cups_remaining: newCupsRemaining,
+    game_over: specialEvents?.game_over ?? false,
+    balls_back_count: specialEvents?.balls_back_count ?? 0,
+    bounce_count: specialEvents?.bounce_count ?? 0,
+    trickshot_count: specialEvents?.trickshot_count ?? 0,
   })
 
   const winnerChanged = newWinnerId !== oldWinnerId
