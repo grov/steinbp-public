@@ -196,18 +196,15 @@ export function CustomTab() {
         </p>
 
         <div className="flex flex-col gap-2 mb-3">
-          {sortedTiers.map((tier, sortedIdx) => {
-            // Retrouve l'index réel dans draft.rank_tiers
-            const realIdx = draft.rank_tiers.findIndex(
-              t => t.name === tier.name && t.emoji === tier.emoji && t.min === tier.min,
-            )
+          {draft.rank_tiers.map((tier, idx) => {
+            const isLowest = !draft.rank_tiers.some((t, i) => i !== idx && t.min < tier.min)
             return (
               <RankRow
-                key={`${tier.emoji}-${tier.name}-${tier.min}`}
+                key={idx}
                 tier={tier}
-                isFirst={sortedIdx === 0}
-                onChange={(field, value) => updateTier(realIdx, field, value)}
-                onDelete={() => deleteTier(realIdx)}
+                isFirst={isLowest}
+                onChange={(field, value) => updateTier(idx, field, value)}
+                onDelete={() => deleteTier(idx)}
               />
             )
           })}
