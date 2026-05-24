@@ -4,18 +4,20 @@ import { useAuth } from '../context/AuthContext'
 import { PlayersPanel } from '../components/admin/PlayersPanel'
 import { TournamentsPanel } from '../components/admin/TournamentsPanel'
 import { PalmaresPanel } from '../components/admin/PalmaresPanel'
+import { CustomTab } from '../components/admin/CustomTab'
 
-type Tab = 'joueurs' | 'tournois' | 'palmares'
+type Tab = 'joueurs' | 'tournois' | 'palmares' | 'custom'
 
-const ALL_TABS: { id: Tab; label: string }[] = [
-  { id: 'joueurs',   label: 'Joueurs'   },
-  { id: 'tournois',  label: 'Tournois'  },
-  { id: 'palmares',  label: 'Palmarès'  },
+const ALL_TABS: { id: Tab; label: string; adminOnly?: boolean }[] = [
+  { id: 'joueurs',   label: 'Joueurs',   adminOnly: true  },
+  { id: 'tournois',  label: 'Tournois'                    },
+  { id: 'palmares',  label: 'Palmarès'                    },
+  { id: 'custom',    label: 'Custom',    adminOnly: true  },
 ]
 
 export function HomeScreen() {
   const { signOut, isAdmin, isOrganisateur } = useAuth()
-  const tabs = isAdmin ? ALL_TABS : ALL_TABS.filter(t => t.id !== 'joueurs')
+  const tabs = ALL_TABS.filter(t => !t.adminOnly || isAdmin)
   const [tab, setTab] = useState<Tab>(isAdmin ? 'joueurs' : 'tournois')
   const [pendingCount, setPendingCount] = useState(0)
 
@@ -81,6 +83,7 @@ export function HomeScreen() {
         {tab === 'joueurs'  && <PlayersPanel onPendingCount={setPendingCount} />}
         {tab === 'tournois' && <TournamentsPanel />}
         {tab === 'palmares' && <PalmaresPanel />}
+        {tab === 'custom'   && <CustomTab />}
       </div>
     </div>
   )

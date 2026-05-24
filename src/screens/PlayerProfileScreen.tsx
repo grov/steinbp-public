@@ -9,73 +9,13 @@ import {
   changePassword,
   type PlayerTournament,
 } from '../lib/playerActions'
+import { fetchAppSettings, computeXp, getRankInfo, DEFAULT_SETTINGS } from '../lib/settingsActions'
 import { pb } from '../lib/pocketbase'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import type { Player, PlayerStats, Team } from '../types/database'
-
-// ── Système de rangs ──────────────────────────────────────────
-
-const RANK_TIERS = [
-  { name: 'Recrue',     emoji: '🍺', min: 0   },
-  { name: 'Gobelet I',  emoji: '🥤', min: 5   },
-  { name: 'Gobelet II', emoji: '🥤', min: 10  },
-  { name: 'Tankard I',  emoji: '🍻', min: 20  },
-  { name: 'Tankard II', emoji: '🍻', min: 35  },
-  { name: 'Stein I',    emoji: '🏆', min: 50  },
-  { name: 'Stein II',   emoji: '🏆', min: 75  },
-  { name: 'Maître',     emoji: '👑', min: 100 },
-] as const
-
-type RankTier = (typeof RANK_TIERS)[number]
-
-function getRankInfo(matchesPlayed: number): {
-  rank: RankTier
-  nextRank: RankTier | null
-  progress: number
-  ptsToNext: number
-  xp: number
-  xpMax: number
-} {
-  let idx = 0
-  for (let i = RANK_TIERS.length - 1; i >= 0; i--) {
-    if (matchesPlayed >= RANK_TIERS[i].min) { idx = i; break }
-  }
-  const rank = RANK_TIERS[idx]
-  const nextRank = idx < RANK_TIERS.length - 1 ? RANK_TIERS[idx + 1] : null
-  const progress = nextRank
-    ? Math.round(((matchesPlayed - rank.min) / (nextRank.min - rank.min)) * 100)
-    : 100
-  return {
-    rank,
-    nextRank,
-    progress,
-    ptsToNext: nextRank ? nextRank.min - matchesPlayed : 0,
-    xp: matchesPlayed,
-    xpMax: nextRank?.min ?? rank.min,
-  }
-}
-
-// ── Badges ────────────────────────────────────────────────────
-
-interface BadgeDef {
-  id: string
-  emoji: string
-  name: string
-  desc: string
-  unlocked: (s: PlayerStats) => boolean
-}
-
-const BADGES: BadgeDef[] = [
-  { id: 'first_win',   emoji: '🏆', name: 'Conquérant',   desc: '1er tournoi gagné',     unlocked: s => s.tournaments_won >= 1     },
-  { id: 'sniper',      emoji: '🎯', name: 'Sniper',        desc: '10 matchs joués',       unlocked: s => s.matches_played >= 10     },
-  { id: 'veteran',     emoji: '🍺', name: 'Vétéran',       desc: '3 tournois joués',      unlocked: s => s.tournaments_played >= 3  },
-  { id: 'unstoppable', emoji: '💀', name: 'Inarrêtable',   desc: '5 tournois gagnés',     unlocked: s => s.tournaments_won >= 5     },
-  { id: 'bouncer',     emoji: '🏓', name: 'Rebondisseur',  desc: '5 rebonds réussis',     unlocked: s => s.bounce_count >= 5        },
-  { id: 'showman',     emoji: '🎪', name: 'Showman',       desc: '3 trickshotsréussis',   unlocked: s => s.trickshot_count >= 3     },
-  { id: 'double_kill', emoji: '💥', name: 'Double Balle',  desc: '3 Game Over causés',    unlocked: s => s.game_over_count >= 3     },
-]
+import type { AppSettings } from '../types/settings'
 
 // ── Écran principal ───────────────────────────────────────────
 
@@ -89,6 +29,7 @@ export function PlayerProfileScreen() {
 
   const [profile, setProfile] = useState<Player | null>(null)
   const [stats, setStats] = useState<PlayerStats | null>(null)
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [, setTeams] = useState<Team[]>([])
   const [playerTournaments, setPlayerTournaments] = useState<PlayerTournament[]>([])
   const [loading, setLoading] = useState(true)
@@ -120,6 +61,7 @@ export function PlayerProfileScreen() {
     let active = true
     Promise.all([
       fetchPlayerStats(targetId),
+      fetchAppSettings(),
       pb.collection('teams').getFullList({
         filter: `player1_id = "${targetId}" || player2_id = "${targetId}"`,
         requestKey: `teams-${targetId}`,
@@ -137,9 +79,10 @@ export function PlayerProfileScreen() {
       }))),
       fetchPlayerTournaments(targetId),
     ])
-      .then(([s, t, pt]) => {
+      .then(([s, appSettings, t, pt]) => {
         if (!active) return
         setStats(s as PlayerStats)
+        setSettings(appSettings as AppSettings)
         setTeams(t as Team[])
         setPlayerTournaments(pt as PlayerTournament[])
       })
@@ -183,6 +126,7 @@ export function PlayerProfileScreen() {
         <HeroCard
           profile={profile}
           stats={stats}
+          settings={settings}
           isSelf={isSelf}
           selfPlayerRef={selfPlayerRef}
           onUpdated={async () => {
@@ -196,7 +140,7 @@ export function PlayerProfileScreen() {
           <>
             <StatsSection stats={stats} />
             <SpecialEventsSection stats={stats} />
-            <BadgesSection stats={stats} />
+            <BadgesSection stats={stats} settings={settings} />
             {playerTournaments.length > 0 && <TournamentsSection playerTournaments={playerTournaments} />}
             <div className="text-center text-zinc-800 text-xs tracking-[6px] select-none">· · · ✦ · · ·</div>
           </>
@@ -221,10 +165,11 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 // ── Hero Card ─────────────────────────────────────────────────
 
 function HeroCard({
-  profile, stats, isSelf, selfPlayerRef, onUpdated,
+  profile, stats, settings, isSelf, selfPlayerRef, onUpdated,
 }: {
   profile: Player
   stats: PlayerStats | null
+  settings: AppSettings
   isSelf: boolean
   selfPlayerRef: MutableRefObject<Player | null>
   onUpdated: () => void
@@ -245,7 +190,9 @@ function HeroCard({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { signOut, refreshPlayer } = useAuth()
 
-  const rankInfo = stats ? getRankInfo(stats.matches_played) : null
+  const rankInfo = stats
+    ? getRankInfo(computeXp(stats, settings.xp_weights), settings.rank_tiers)
+    : null
 
   async function handleSave() {
     setSaving(true)
@@ -548,13 +495,13 @@ function SpecialEventsSection({ stats }: { stats: PlayerStats }) {
 
 // ── Section Badges ────────────────────────────────────────────
 
-function BadgesSection({ stats }: { stats: PlayerStats }) {
+function BadgesSection({ stats, settings }: { stats: PlayerStats; settings: AppSettings }) {
   return (
     <section>
       <SectionTitle>Aptitudes & Badges</SectionTitle>
       <div className="flex flex-wrap gap-2">
-        {BADGES.map(badge => {
-          const isUnlocked = badge.unlocked(stats)
+        {settings.badges.map(badge => {
+          const isUnlocked = stats[badge.stat] >= badge.threshold
           return (
             <div
               key={badge.id}

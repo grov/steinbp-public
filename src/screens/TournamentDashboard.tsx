@@ -89,17 +89,6 @@ export function TournamentDashboard() {
             </div>
           </div>
 
-          {/* Stats rapides */}
-          <div className="flex gap-3 text-center">
-            <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2">
-              <p className="text-green-400 font-black text-xl">{inProgressMatches.length}</p>
-              <p className="text-green-600 text-xs">En cours</p>
-            </div>
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-3 py-2">
-              <p className="text-yellow-400 font-black text-xl">{readyMatches.length}</p>
-              <p className="text-yellow-600 text-xs">Prêts</p>
-            </div>
-          </div>
         </div>
       </header>
 
