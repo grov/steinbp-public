@@ -24,14 +24,25 @@ const STAT_OPTIONS: { value: BadgeStat; label: string }[] = [
 
 // ── Composant principal ───────────────────────────────────────
 
+/** Génère un identifiant stable pour un rang dans le state local */
+function newRankId() { return `rank_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` }
+
 export function CustomTab() {
   const [loading, setLoading]   = useState(true)
   const [saving,  setSaving]    = useState(false)
   const [saved,   setSaved]     = useState(false)
   const [draft,   setDraft]     = useState<AppSettings>(DEFAULT_SETTINGS)
+  // IDs stables pour les rangs — découplés du contenu, donc jamais recréés à la frappe
+  const [rankKeys, setRankKeys] = useState<string[]>(() =>
+    DEFAULT_SETTINGS.rank_tiers.map(newRankId)
+  )
 
   useEffect(() => {
-    fetchAppSettings().then(s => { setDraft(s); setLoading(false) })
+    fetchAppSettings().then(s => {
+      setDraft(s)
+      setRankKeys(s.rank_tiers.map(newRankId))
+      setLoading(false)
+    })
   }, [])
 
   // ── Rangs ──────────────────────────────────────────────────
@@ -50,6 +61,7 @@ export function CustomTab() {
       ...prev,
       rank_tiers: prev.rank_tiers.filter((_, i) => i !== idx),
     }))
+    setRankKeys(prev => prev.filter((_, i) => i !== idx))
     setSaved(false)
   }
 
@@ -59,6 +71,7 @@ export function CustomTab() {
       ...prev,
       rank_tiers: [...prev.rank_tiers, { name: 'Nouveau rang', emoji: '⭐', min: maxMin + 10 }],
     }))
+    setRankKeys(prev => [...prev, newRankId()])
     setSaved(false)
   }
 
@@ -119,6 +132,7 @@ export function CustomTab() {
   function handleReset() {
     if (!confirm('Réinitialiser les rangs et badges par défaut ?')) return
     setDraft(structuredClone(DEFAULT_SETTINGS))
+    setRankKeys(DEFAULT_SETTINGS.rank_tiers.map(newRankId))
     setSaved(false)
   }
 
@@ -200,7 +214,7 @@ export function CustomTab() {
             const isLowest = !draft.rank_tiers.some((t, i) => i !== idx && t.min < tier.min)
             return (
               <RankRow
-                key={idx}
+                key={rankKeys[idx] ?? idx}
                 tier={tier}
                 isFirst={isLowest}
                 onChange={(field, value) => updateTier(idx, field, value)}
