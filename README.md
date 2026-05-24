@@ -1,47 +1,134 @@
 # SteinBP — Application de gestion de tournois de beer pong
+
 <p align="center" width="100%">
-    <img width="33%" src="logo.png"> 
+    <img width="33%" src="logo.png">
 </p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-2.0-orange?style=flat-square" alt="v2.0" />
+  <img src="https://img.shields.io/badge/stack-React%20%2B%20PocketBase-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/deploy-Docker%20%2B%20Traefik-informational?style=flat-square" />
+  <img src="https://img.shields.io/badge/PWA-installable-green?style=flat-square" />
+</p>
+
 ## Présentation
 
-**SteinBP** est une application web mobile-first conçue pour organiser et suivre des tournois de beer pong. Elle permet de gérer l'ensemble du cycle de vie d'un tournoi : inscriptions des joueurs, création des tournois, gestion des équipes, saisie des scores en temps réel et consultation du palmarès.
+**SteinBP** est une application web mobile-first conçue pour organiser et suivre des tournois de beer pong. Elle gère l'ensemble du cycle de vie d'un tournoi : inscriptions, création des brackets, saisie des scores en temps réel avec règles spéciales, et un **système de progression RPG** complet avec rangs, XP et badges — entièrement personnalisable depuis l'interface d'administration.
 
 L'application est accessible depuis n'importe quel navigateur et peut être installée sur mobile comme une application native (PWA).
 
 ---
 
-## Rôles et accès
+## Nouveautés v2 🆕
 
-L'application repose sur trois niveaux d'accès :
+La version 2 introduit un **système de méta-jeu** autour des statistiques des joueurs, avec une expérience de profil entièrement repensée.
+
+### 🎮 Système de progression RPG
+
+Chaque joueur accumule de l'**XP** selon une formule configurable et monte en **rangs** (Recrue, Gobelet, Tankard, Stein, Maître…). La barre de progression et le rang sont visibles directement sur le profil.
+
+### 🏅 Système de badges
+
+27 badges débloquables répartis en 9 catégories, basés sur les statistiques du joueur : matchs joués, matchs gagnés, win rate, tournois, règles spéciales… Chaque badge a un seuil configurable et s'affiche sur le profil du joueur.
+
+### ⚙️ Onglet Custom (admin)
+
+Les admins peuvent **tout personnaliser** sans toucher au code :
+- Modifier les rangs (noms, emojis, seuils XP)
+- Configurer la formule XP (poids des différentes stats)
+- Créer, éditer et supprimer des badges librement
+- Réinitialiser rangs et badges indépendamment
+
+### 🎯 Règles spéciales
+
+4 règles de beer pong intégrées à la saisie des scores, qui alimentent directement les statistiques des joueurs :
+
+| Règle | Description |
+|-------|-------------|
+| **Balls Back** | 2 balles dans des verres différents |
+| **Game Over** | 2 balles dans le même verre |
+| **Rebond** | Balle qui rebondit avant d'entrer |
+| **Trickshot** | Tir avec technique spéciale |
+
+### 🦸 Profil héros
+
+Le profil joueur a été entièrement redesigné dans un style RPG : avatar hexagonal, carte héros, barre XP avec progression vers le rang suivant, grille de badges et statistiques détaillées incluant les règles spéciales.
+
+---
+
+## Rôles et accès
 
 | Rôle | Accès |
 |------|-------|
-| **Admin** | Tout : joueurs, tournois (tous), palmarès, profil |
+| **Admin** | Tout : joueurs, tournois, palmarès, profil, **onglet Custom** |
 | **Organisateur** | Ses propres tournois, palmarès, profil |
 | **Joueur** | Son profil, palmarès |
 
 ---
 
-## Fonctionnalités par rôle
+## Fonctionnalités
 
 ### Admin
-- **Gestion des joueurs** — valider ou refuser les inscriptions, modifier le rôle d'un joueur (admin / organisateur / joueur), supprimer un compte
-- **Gestion des tournois** — accès à tous les tournois créés, suppression
+- **Gestion des joueurs** — valider ou refuser les inscriptions, modifier le rôle (admin / organisateur / joueur), supprimer un compte
+- **Gestion des tournois** — accès à tous les tournois, suppression
 - **Création de tournoi** — format élimination directe ou poules + arbre, nombre de tables, gobelets par côté
-- **Dashboard en temps réel** — suivi des matchs en cours, assignation des tables, saisie des scores
-- **Palmarès global** — classement de toutes les équipes, tri par victoires ou ratio
+- **Dashboard en temps réel** — suivi des matchs, assignation des tables, saisie des scores avec règles spéciales
+- **Palmarès global** — classement de toutes les équipes
+- **Onglet Custom** — personnalisation complète du système RPG (rangs, XP, badges)
 
 ### Organisateur
-- **Création et gestion de ses tournois** — uniquement les tournois qu'il a créés
+- **Création et gestion de ses tournois**
 - **Inscription des équipes** — ajout manuel ou liaison avec des comptes joueurs
 - **Suivi en temps réel** — même dashboard que l'admin pour ses tournois
 - **Palmarès** — accès en lecture
 
 ### Joueur
-- **Profil personnalisé** — photo de profil, nom affiché, pseudo
-- **Statistiques** — matchs joués/gagnés, taux de victoire, tournois joués/gagnés
-- **Historique des tournois** — liste des tournois auxquels il a participé, avec son équipe et le résultat
+- **Profil héros** — avatar hexagonal, rang actuel, barre de progression XP
+- **Statistiques complètes** — matchs joués/gagnés, win rate, tournois, règles spéciales (Balls Back, Rebonds, Trickshots, Game Over)
+- **Collection de badges** — badges débloqués mis en avant, badges verrouillés en grisé
+- **Historique des tournois** — liste des participations avec équipe et résultat
 - **Palmarès** — classement global de toutes les équipes
+
+---
+
+## Système RPG
+
+### XP et rangs
+
+L'XP d'un joueur est calculée selon une formule pondérée, configurable depuis l'onglet Custom :
+
+```
+XP = (matchs joués × poids_1) + (matchs gagnés × poids_2) + (tournois gagnés × poids_3)
+```
+
+Les rangs par défaut :
+
+| Rang | Emoji | XP minimum |
+|------|-------|-----------|
+| Recrue | 🍺 | 0 |
+| Gobelet I | 🥤 | 5 |
+| Gobelet II | 🥤 | 10 |
+| Tankard I | 🍻 | 20 |
+| Tankard II | 🍻 | 35 |
+| Stein I | 🏆 | 50 |
+| Stein II | 🏆 | 75 |
+| Maître | 👑 | 100 |
+
+### Badges (27 par défaut)
+
+| Catégorie | Badges |
+|-----------|--------|
+| Matchs joués | 🎯 Sniper · 🎮 Habitué · ⚔️ Guerrier · 🌟 Légende |
+| Matchs gagnés | 🥇 Vainqueur · 💪 Dominant · 👑 Roi de la table |
+| Win rate | 🎲 Tacticien · ⚡ Implacable · 🔮 Prophète |
+| Tournois joués | 🍺 Vétéran · 🎖️ Compétiteur · 🌍 Pro |
+| Tournois gagnés | 🏆 Conquérant · 💀 Inarrêtable |
+| Balls Back | 🔄 Boomerang · 🌀 Retour de flamme · 🧲 Maître du retour |
+| Rebonds | 🏓 Rebondisseur · 🦘 Kangourou · 🎯 Maestro |
+| Trickshots | 🎪 Showman · 🤹 Acrobate · 🎩 Magicien |
+| Game Over | 💥 Double Balle · 💣 Destructeur · ☠️ Terminator |
+
+> Tous les noms, emojis, seuils et catégories sont modifiables depuis l'onglet **Custom**.
 
 ---
 
@@ -60,9 +147,9 @@ Phase de groupes avec classement (victoires, différence de gobelets), suivie d'
 1. L'organisateur crée le tournoi et configure le format
 2. Les équipes sont inscrites (manuellement ou via les comptes joueurs)
 3. Le bracket / les groupes sont générés automatiquement
-4. Les matchs sont joués ; les scores sont saisis en temps réel depuis le dashboard
+4. Les matchs sont joués ; les scores sont saisis en temps réel depuis le dashboard (avec règles spéciales)
 5. Le bracket avance automatiquement jusqu'à la finale
-6. Le tournoi est clôturé et le palmarès est mis à jour
+6. Le tournoi est clôturé, le palmarès est mis à jour et les statistiques joueurs sont recalculées
 
 ---
 
@@ -160,6 +247,7 @@ Les mises à jour de PocketBase corrigent régulièrement des failles de sécuri
 | Temps réel | PocketBase Realtime (WebSockets) |
 | Conteneurisation | Docker + Nginx |
 | PWA | vite-plugin-pwa (Workbox) |
+| Reverse proxy | Traefik (optionnel, production) |
 
 ---
 
@@ -191,7 +279,7 @@ Connectez-vous au panel PocketBase (`/_/`), ouvrez la collection **users** et cr
 
 ### Gérer les utilisateurs suivants
 
-Une fois connecté en tant qu'admin, tous les utilisateurs peuvent être approuvés et leur rôle modifié directement depuis l'interface `/admin` de l'application — plus besoin de passer par PocketBase.
+Une fois connecté en tant qu'admin, tous les utilisateurs peuvent être approuvés et leur rôle modifié directement depuis l'interface de l'application — plus besoin de passer par PocketBase.
 
 ---
 
@@ -229,7 +317,7 @@ Prérequis : un réseau Docker externe `traefik` et une instance Traefik en fonc
    |----------|-------------|
    | `APP_NAME` | Nom utilisé pour les routeurs/middlewares Traefik (ex : `steinbp`) |
    | `APP_DOMAIN` | Domaine public de l'application (ex : `steinbp.example.com`) |
-   | `VITE_POCKETBASE_URL` | URL publique de l'app (ex : `https://steinbp.example.com`) |
+   | `VITE_POCKETBASE_URL` | URL publique de l'app avec `https://` (ex : `https://steinbp.example.com`) |
    | `TRAEFIK_CERT_RESOLVER` | Nom du cert resolver Traefik (ex : `letsencrypt`) |
    | `TRAEFIK_SECURED_MIDDLEWARES` | Middlewares du routeur HTTPS — doit toujours inclure `<APP_NAME>-headers@docker` |
 
@@ -257,3 +345,22 @@ docker compose up -d
 Les releases disponibles sont listées sur [github.com/pocketbase/pocketbase/releases](https://github.com/pocketbase/pocketbase/releases).
 
 > **Note :** Il est recommandé de consulter le changelog avant de mettre à jour, car certaines versions peuvent introduire des changements incompatibles avec les migrations existantes.
+
+---
+
+## Changelog
+
+### v2.0
+- ✨ Système de progression RPG (XP, rangs, barre de progression)
+- 🏅 27 badges débloquables répartis en 9 catégories
+- ⚙️ Onglet Custom : personnalisation complète des rangs, de la formule XP et des badges depuis l'UI
+- 🎯 Règles spéciales intégrées à la saisie des scores (Balls Back, Game Over, Rebond, Trickshot)
+- 🦸 Profil joueur entièrement redesigné (style RPG, avatar hexagonal, statistiques détaillées)
+- 🔄 Badges groupés par catégorie et triés par seuil dans l'interface admin
+
+### v1.0
+- 🏆 Gestion de tournois (élimination directe, poules + arbre)
+- 👥 Système de rôles (admin, organisateur, joueur)
+- 📊 Palmarès global et statistiques de base
+- 📺 Écran public en temps réel (`/display/:id`)
+- 📱 Installation PWA
