@@ -129,10 +129,16 @@ export function CustomTab() {
     }
   }
 
-  function handleReset() {
-    if (!confirm('Réinitialiser les rangs et badges par défaut ?')) return
-    setDraft(structuredClone(DEFAULT_SETTINGS))
+  function handleResetTiers() {
+    if (!confirm('Réinitialiser les rangs par défaut ?')) return
+    setDraft(prev => ({ ...prev, rank_tiers: structuredClone(DEFAULT_SETTINGS.rank_tiers) }))
     setRankKeys(DEFAULT_SETTINGS.rank_tiers.map(newRankId))
+    setSaved(false)
+  }
+
+  function handleResetBadges() {
+    if (!confirm('Réinitialiser les badges par défaut ?')) return
+    setDraft(prev => ({ ...prev, badges: structuredClone(DEFAULT_SETTINGS.badges) }))
     setSaved(false)
   }
 
@@ -204,7 +210,13 @@ export function CustomTab() {
 
       {/* ── Rangs ──────────────────────────────────────────── */}
       <section>
-        <SectionTitle>Rangs ({draft.rank_tiers.length})</SectionTitle>
+        <SectionTitle action={
+          <button onClick={handleResetTiers} className="text-[10px] text-zinc-700 hover:text-zinc-400 transition-colors">
+            Réinitialiser
+          </button>
+        }>
+          Rangs ({draft.rank_tiers.length})
+        </SectionTitle>
         <p className="text-zinc-500 text-xs mb-4">
           Triés automatiquement par score minimum. Le premier rang (min = 0) est le rang de départ.
         </p>
@@ -234,7 +246,13 @@ export function CustomTab() {
 
       {/* ── Badges ─────────────────────────────────────────── */}
       <section>
-        <SectionTitle>Badges ({draft.badges.length})</SectionTitle>
+        <SectionTitle action={
+          <button onClick={handleResetBadges} className="text-[10px] text-zinc-700 hover:text-zinc-400 transition-colors">
+            Réinitialiser
+          </button>
+        }>
+          Badges ({draft.badges.length})
+        </SectionTitle>
         <p className="text-zinc-500 text-xs mb-4">
           Débloqués quand la statistique choisie atteint le seuil défini.
         </p>
@@ -259,13 +277,7 @@ export function CustomTab() {
       </section>
 
       {/* ── Actions ────────────────────────────────────────── */}
-      <div className="flex gap-3 items-center sticky bottom-4">
-        <button
-          onClick={handleReset}
-          className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors shrink-0"
-        >
-          Réinitialiser
-        </button>
+      <div className="sticky bottom-4">
         <Button fullWidth size="lg" loading={saving} onClick={handleSave}>
           {saved ? '✓ Sauvegardé !' : 'Sauvegarder les modifications'}
         </Button>
@@ -276,11 +288,14 @@ export function CustomTab() {
 
 // ── SectionTitle ──────────────────────────────────────────────
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
-      {children}
-    </h2>
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+        {children}
+      </h2>
+      {action}
+    </div>
   )
 }
 
