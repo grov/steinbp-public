@@ -134,6 +134,11 @@ export interface PlayerStats {
   win_rate: number
   tournaments_played: number
   tournaments_won: number
+  // Règles spéciales
+  game_over_count: number
+  balls_back_count: number
+  bounce_count: number
+  trickshot_count: number
 }
 
 // ── Payloads pour les mutations ───────────────────────────────

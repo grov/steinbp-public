@@ -15,68 +15,115 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import type { Player, PlayerStats, Team } from '../types/database'
 
+// ── Système de rangs ──────────────────────────────────────────
+
+const RANK_TIERS = [
+  { name: 'Recrue',     emoji: '🍺', min: 0   },
+  { name: 'Gobelet I',  emoji: '🥤', min: 5   },
+  { name: 'Gobelet II', emoji: '🥤', min: 10  },
+  { name: 'Tankard I',  emoji: '🍻', min: 20  },
+  { name: 'Tankard II', emoji: '🍻', min: 35  },
+  { name: 'Stein I',    emoji: '🏆', min: 50  },
+  { name: 'Stein II',   emoji: '🏆', min: 75  },
+  { name: 'Maître',     emoji: '👑', min: 100 },
+] as const
+
+type RankTier = (typeof RANK_TIERS)[number]
+
+function getRankInfo(matchesPlayed: number): {
+  rank: RankTier
+  nextRank: RankTier | null
+  progress: number
+  ptsToNext: number
+  xp: number
+  xpMax: number
+} {
+  let idx = 0
+  for (let i = RANK_TIERS.length - 1; i >= 0; i--) {
+    if (matchesPlayed >= RANK_TIERS[i].min) { idx = i; break }
+  }
+  const rank = RANK_TIERS[idx]
+  const nextRank = idx < RANK_TIERS.length - 1 ? RANK_TIERS[idx + 1] : null
+  const progress = nextRank
+    ? Math.round(((matchesPlayed - rank.min) / (nextRank.min - rank.min)) * 100)
+    : 100
+  return {
+    rank,
+    nextRank,
+    progress,
+    ptsToNext: nextRank ? nextRank.min - matchesPlayed : 0,
+    xp: matchesPlayed,
+    xpMax: nextRank?.min ?? rank.min,
+  }
+}
+
+// ── Badges ────────────────────────────────────────────────────
+
+interface BadgeDef {
+  id: string
+  emoji: string
+  name: string
+  desc: string
+  unlocked: (s: PlayerStats) => boolean
+}
+
+const BADGES: BadgeDef[] = [
+  { id: 'first_win',   emoji: '🏆', name: 'Conquérant',   desc: '1er tournoi gagné',     unlocked: s => s.tournaments_won >= 1     },
+  { id: 'sniper',      emoji: '🎯', name: 'Sniper',        desc: '10 matchs joués',       unlocked: s => s.matches_played >= 10     },
+  { id: 'veteran',     emoji: '🍺', name: 'Vétéran',       desc: '3 tournois joués',      unlocked: s => s.tournaments_played >= 3  },
+  { id: 'unstoppable', emoji: '💀', name: 'Inarrêtable',   desc: '5 tournois gagnés',     unlocked: s => s.tournaments_won >= 5     },
+  { id: 'bouncer',     emoji: '🏓', name: 'Rebondisseur',  desc: '5 rebonds réussis',     unlocked: s => s.bounce_count >= 5        },
+  { id: 'showman',     emoji: '🎪', name: 'Showman',       desc: '3 trickshotsréussis',   unlocked: s => s.trickshot_count >= 3     },
+  { id: 'double_kill', emoji: '💥', name: 'Double Balle',  desc: '3 Game Over causés',    unlocked: s => s.game_over_count >= 3     },
+]
+
+// ── Écran principal ───────────────────────────────────────────
+
 export function PlayerProfileScreen() {
   const { id } = useParams<{ id?: string }>()
   const { player: selfPlayer, refreshPlayer, isManager } = useAuth()
   const navigate = useNavigate()
 
-  // id dans l'URL → profil public ; pas d'id → propre profil
   const targetId = id ?? selfPlayer?.id
   const isSelf = !id || id === selfPlayer?.id
 
   const [profile, setProfile] = useState<Player | null>(null)
   const [stats, setStats] = useState<PlayerStats | null>(null)
-  const [teams, setTeams] = useState<Team[]>([])
+  const [, setTeams] = useState<Team[]>([])
   const [playerTournaments, setPlayerTournaments] = useState<PlayerTournament[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Ref pour éviter que refreshPlayer() dans AuthContext déclenche le useEffect
   const selfPlayerRef = useRef(selfPlayer)
   selfPlayerRef.current = selfPlayer
 
-  // Effect 1 : chargement de l'identité du profil
+  // Effect 1 : chargement identité
   useEffect(() => {
     if (!targetId) return
-
-    if (isSelf) {
-      const sp = selfPlayerRef.current
-      setProfile(sp)
-      setLoading(false)
-      return
-    }
-
+    if (isSelf) { setProfile(selfPlayerRef.current); setLoading(false); return }
     let active = true
-    setLoading(true)
-    setError(null)
-
+    setLoading(true); setError(null)
     fetchPublicPlayer(targetId)
-      .then((p) => {
-        if (!active) return
-        if (!p) setError('not found')
-        else setProfile(p)
-      })
+      .then(p => { if (!active) return; if (!p) setError('not found'); else setProfile(p) })
       .catch((e: unknown) => {
         if (!active) return
         if ((e as { isAbort?: boolean })?.isAbort) return
         setError(e instanceof Error ? e.message : 'Erreur inconnue')
       })
       .finally(() => { if (active) setLoading(false) })
-
     return () => { active = false }
   }, [targetId, isSelf])
 
-  // Effect 2 : données secondaires (stats, équipes, tournois)
+  // Effect 2 : stats + équipes + tournois
   useEffect(() => {
     if (!targetId) return
     let active = true
-
     Promise.all([
       fetchPlayerStats(targetId),
       pb.collection('teams').getFullList({
         filter: `player1_id = "${targetId}" || player2_id = "${targetId}"`,
         requestKey: `teams-${targetId}`,
-      }).then((recs) => recs.map((r) => ({
+      }).then(recs => recs.map(r => ({
         id: r.id,
         tournament_id: r['tournament_id'] as string,
         name: r['name'] as string,
@@ -100,25 +147,17 @@ export function PlayerProfileScreen() {
         if (!active) return
         if ((e as { isAbort?: boolean })?.isAbort) return
       })
-
     return () => { active = false }
   }, [targetId])
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-600">
-        Chargement…
-      </div>
-    )
+    return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-600">Chargement…</div>
   }
 
   if (error || !profile) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-600 text-center px-4">
-        <div>
-          <p className="text-4xl mb-3">🔍</p>
-          <p>Profil introuvable ou non approuvé.</p>
-        </div>
+        <div><p className="text-4xl mb-3">🔍</p><p>Profil introuvable ou non approuvé.</p></div>
       </div>
     )
   }
@@ -137,45 +176,55 @@ export function PlayerProfileScreen() {
           </button>
         </div>
       )}
-      <div className="max-w-lg mx-auto px-4 py-8 flex flex-col gap-8">
-        {/* Carte profil */}
-        <ProfileCard
+
+      <div className="max-w-lg mx-auto px-4 py-8 flex flex-col gap-6">
+
+        {/* ─── Hero Card ─── */}
+        <HeroCard
           profile={profile}
+          stats={stats}
           isSelf={isSelf}
           selfPlayerRef={selfPlayerRef}
           onUpdated={async () => {
             await refreshPlayer()
-            if (isSelf) {
-              setProfile(selfPlayerRef.current)
-            } else if (targetId) {
-              const p = await fetchPublicPlayer(targetId)
-              setProfile(p)
-            }
+            if (isSelf) setProfile(selfPlayerRef.current)
+            else if (targetId) setProfile(await fetchPublicPlayer(targetId))
           }}
         />
 
-        {/* Statistiques */}
-        {stats && <StatsCard stats={stats} />}
-
-        {/* Tournois */}
-        {playerTournaments.length > 0 && <TournamentsHistoryCard playerTournaments={playerTournaments} />}
-
-        {/* Équipes */}
-        {teams.length > 0 && <TeamsCard teams={teams} />}
+        {stats && (
+          <>
+            <StatsSection stats={stats} />
+            <SpecialEventsSection stats={stats} />
+            <BadgesSection stats={stats} />
+            {playerTournaments.length > 0 && <TournamentsSection playerTournaments={playerTournaments} />}
+            <div className="text-center text-zinc-800 text-xs tracking-[6px] select-none">· · · ✦ · · ·</div>
+          </>
+        )}
       </div>
     </div>
   )
 }
 
-// ── Carte profil + édition ────────────────────────────────────
+// ── SectionTitle ──────────────────────────────────────────────
 
-function ProfileCard({
-  profile,
-  isSelf,
-  selfPlayerRef,
-  onUpdated,
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="flex-1 h-px bg-zinc-800" />
+      <p className="text-[10px] font-bold uppercase tracking-[4px] text-zinc-600">{children}</p>
+      <div className="flex-1 h-px bg-zinc-800" />
+    </div>
+  )
+}
+
+// ── Hero Card ─────────────────────────────────────────────────
+
+function HeroCard({
+  profile, stats, isSelf, selfPlayerRef, onUpdated,
 }: {
   profile: Player
+  stats: PlayerStats | null
   isSelf: boolean
   selfPlayerRef: MutableRefObject<Player | null>
   onUpdated: () => void
@@ -196,27 +245,7 @@ function ProfileCard({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { signOut, refreshPlayer } = useAuth()
 
-  function openChangePwd() {
-    setOldPwd(''); setNewPwd(''); setConfirmPwd('')
-    setPwdError(null); setPwdSuccess(false)
-    setChangingPwd(true)
-  }
-
-  async function handleChangePwd() {
-    if (!oldPwd || !newPwd || !confirmPwd) { setPwdError('Tous les champs sont requis.'); return }
-    if (newPwd.length < 8) { setPwdError('Le nouveau mot de passe doit faire au moins 8 caractères.'); return }
-    if (newPwd !== confirmPwd) { setPwdError('Les mots de passe ne correspondent pas.'); return }
-    setPwdSaving(true); setPwdError(null)
-    try {
-      await changePassword(profile.id, oldPwd, newPwd)
-      setPwdSuccess(true)
-      setOldPwd(''); setNewPwd(''); setConfirmPwd('')
-    } catch (e) {
-      setPwdError(e instanceof Error ? e.message : 'Mot de passe actuel incorrect.')
-    } finally {
-      setPwdSaving(false)
-    }
-  }
+  const rankInfo = stats ? getRankInfo(stats.matches_played) : null
 
   async function handleSave() {
     setSaving(true)
@@ -226,251 +255,355 @@ function ProfileCard({
       onUpdated()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Erreur lors de la sauvegarde.')
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
+  }
+
+  async function handleChangePwd() {
+    if (!oldPwd || !newPwd || !confirmPwd) { setPwdError('Tous les champs sont requis.'); return }
+    if (newPwd.length < 8) { setPwdError('8 caractères minimum.'); return }
+    if (newPwd !== confirmPwd) { setPwdError('Les mots de passe ne correspondent pas.'); return }
+    setPwdSaving(true); setPwdError(null)
+    try {
+      await changePassword(profile.id, oldPwd, newPwd)
+      setPwdSuccess(true); setOldPwd(''); setNewPwd(''); setConfirmPwd('')
+    } catch (e) {
+      setPwdError(e instanceof Error ? e.message : 'Mot de passe actuel incorrect.')
+    } finally { setPwdSaving(false) }
   }
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 2 * 1024 * 1024) { alert('Image trop lourde (2 Mo max).'); return }
-
     setUploadingAvatar(true)
     try {
       const url = await uploadAvatar(profile.id, file)
       setAvatarUrl(url + '?t=' + Date.now())
-      // Met à jour le ref local et sync AuthContext sans déclencher de rechargement de page
       if (selfPlayerRef.current) selfPlayerRef.current = { ...selfPlayerRef.current, avatar_url: url }
       await refreshPlayer()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Erreur upload.')
-    } finally {
-      setUploadingAvatar(false)
-    }
+    } finally { setUploadingAvatar(false) }
+  }
+
+  function togglePwd() {
+    setOldPwd(''); setNewPwd(''); setConfirmPwd(''); setPwdError(null); setPwdSuccess(false)
+    setChangingPwd(v => !v)
   }
 
   return (
-    <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6">
-      <div className="flex items-start gap-5">
-        {/* Avatar */}
-        <div className="relative flex-shrink-0">
-          <div className="w-20 h-20 rounded-full bg-zinc-800 border-2 border-zinc-700 overflow-hidden">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={profile.display_name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-3xl">
-                {profile.display_name?.[0]?.toUpperCase() ?? '?'}
-              </div>
-            )}
-          </div>
-          {isSelf && (
-            <>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingAvatar}
-                className="absolute -bottom-1 -right-1 w-7 h-7 bg-brand rounded-full flex items-center
-                           justify-center text-white text-sm hover:bg-brand-dark transition-colors
-                           disabled:opacity-50"
-                aria-label="Changer la photo"
-              >
-                {uploadingAvatar ? '…' : '📷'}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarChange}
-              />
-            </>
-          )}
-        </div>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
 
-        {/* Infos */}
-        <div className="flex-1 min-w-0">
-          {editing ? (
-            <div className="flex flex-col gap-2">
-              <Input
-                label="Nom affiché"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-              />
-              <Input
-                label="Pseudo"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoCapitalize="none"
-              />
-              <div className="flex gap-2 mt-1">
-                <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Annuler</Button>
-                <Button size="sm" fullWidth loading={saving} onClick={handleSave}>Enregistrer</Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <h1 className="text-2xl font-black text-white leading-tight">{profile.display_name}</h1>
-              <p className="text-zinc-500 text-sm mt-0.5">@{profile.username}</p>
-              {isSelf && (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="mt-2 text-xs text-brand hover:text-brand-dark transition-colors"
-                >
-                  Modifier le profil
-                </button>
-              )}
-            </>
-          )}
-        </div>
+      {/* ── Label Fiche de Héros ── */}
+      <div className="text-center pt-5 pb-3 border-b border-zinc-800/60">
+        <span className="text-[9px] font-bold uppercase tracking-[5px] text-zinc-600">
+          ⚔ Fiche de Héros ⚔
+        </span>
       </div>
 
-      {isSelf && !editing && (
-        <div className="mt-5 flex flex-col gap-3">
-          {/* Formulaire changement de mot de passe */}
-          {changingPwd ? (
-            <div className="flex flex-col gap-2 bg-zinc-800 rounded-xl p-4">
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Changer le mot de passe</p>
-              {pwdSuccess ? (
-                <p className="text-green-400 text-sm">Mot de passe modifié avec succès.</p>
-              ) : (
+      {/* ── Avatar + identité ── */}
+      <div className="flex flex-col items-center px-6 pt-6 pb-4">
+
+        {editing ? (
+          /* Formulaire d'édition */
+          <div className="w-full flex flex-col gap-2">
+            <Input label="Nom affiché" value={displayName} onChange={e => setDisplayName(e.target.value)} />
+            <Input label="Pseudo" value={username} onChange={e => setUsername(e.target.value)} autoCapitalize="none" />
+            <div className="flex gap-2 mt-1">
+              <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Annuler</Button>
+              <Button size="sm" fullWidth loading={saving} onClick={handleSave}>Enregistrer</Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Avatar hexagonal */}
+            <div className="relative mb-4">
+              <div
+                style={{ clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)' }}
+                className="w-24 h-24 bg-brand/25 flex items-center justify-center"
+              >
+                <div
+                  style={{ clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)' }}
+                  className="w-[88px] h-[88px] bg-zinc-800 overflow-hidden flex items-center justify-center text-3xl font-black text-zinc-400"
+                >
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt={profile.display_name} className="w-full h-full object-cover" />
+                    : profile.display_name?.[0]?.toUpperCase() ?? '?'
+                  }
+                </div>
+              </div>
+              {/* Badge de rang */}
+              {rankInfo && (
+                <div className="absolute -bottom-1 -right-2 w-7 h-7 bg-zinc-800 border-2 border-zinc-900 rounded-full flex items-center justify-center text-sm leading-none">
+                  {rankInfo.rank.emoji}
+                </div>
+              )}
+              {/* Bouton upload */}
+              {isSelf && (
                 <>
-                  <Input
-                    label="Mot de passe actuel"
-                    type="password"
-                    value={oldPwd}
-                    onChange={(e) => { setOldPwd(e.target.value); setPwdError(null) }}
-                  />
-                  <Input
-                    label="Nouveau mot de passe"
-                    type="password"
-                    value={newPwd}
-                    onChange={(e) => { setNewPwd(e.target.value); setPwdError(null) }}
-                  />
-                  <Input
-                    label="Confirmer le nouveau mot de passe"
-                    type="password"
-                    value={confirmPwd}
-                    onChange={(e) => { setConfirmPwd(e.target.value); setPwdError(null) }}
-                  />
-                  {pwdError && <p className="text-red-400 text-xs">{pwdError}</p>}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="absolute -bottom-1 -left-2 w-7 h-7 bg-brand rounded-full flex items-center justify-center text-white text-xs hover:bg-brand-dark transition-colors disabled:opacity-50"
+                    aria-label="Changer la photo"
+                  >
+                    {uploadingAvatar ? '…' : '📷'}
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </>
               )}
-              <div className="flex gap-2 mt-1">
-                <Button variant="ghost" size="sm" onClick={() => setChangingPwd(false)}>
-                  {pwdSuccess ? 'Fermer' : 'Annuler'}
-                </Button>
-                {!pwdSuccess && (
-                  <Button size="sm" fullWidth loading={pwdSaving} onClick={handleChangePwd}>
-                    Enregistrer
-                  </Button>
-                )}
-              </div>
             </div>
-          ) : (
-            <button
-              onClick={openChangePwd}
-              className="text-xs text-brand hover:text-brand-dark transition-colors text-left"
-            >
-              Changer le mot de passe
-            </button>
-          )}
 
-          <div className="flex items-center justify-between">
+            {/* Nom */}
+            <h1 className="text-2xl font-black text-white tracking-wide flicker">{profile.display_name}</h1>
+            <p className="text-zinc-600 text-sm mt-0.5">@{profile.username}</p>
+
+            {/* Label de rang */}
+            {rankInfo && (
+              <div className="mt-3 px-5 py-1.5 border-y border-brand/20 bg-brand/5 w-full text-center">
+                <span className="text-[10px] font-bold uppercase tracking-[3px] text-brand">
+                  ✦ {rankInfo.rank.name} ✦
+                </span>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ── Barre XP ── */}
+      {rankInfo && !editing && (
+        <div className="px-6 pb-5 border-b border-zinc-800">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[9px] uppercase tracking-[3px] text-zinc-600">Progression</span>
+            <span className="text-[10px] font-semibold text-zinc-500 tabular-nums">
+              {rankInfo.xp} / {rankInfo.xpMax} pts
+            </span>
+          </div>
+          <div className="h-2 bg-zinc-800 rounded-full border border-zinc-700/40 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-brand/60 to-brand rounded-full transition-[width] duration-700"
+              style={{ width: `${rankInfo.progress}%` }}
+            />
+          </div>
+          {rankInfo.nextRank ? (
+            <p className="text-[9px] text-zinc-700 text-right mt-1 italic">
+              {rankInfo.ptsToNext} pts avant {rankInfo.nextRank.name}
+            </p>
+          ) : (
+            <p className="text-[9px] text-brand/50 text-right mt-1 italic">Rang maximum atteint ✦</p>
+          )}
+        </div>
+      )}
+
+      {/* ── Formulaire changement de mot de passe ── */}
+      {isSelf && !editing && changingPwd && (
+        <div className="px-6 py-4 border-b border-zinc-800 flex flex-col gap-2">
+          <p className="text-[9px] font-bold uppercase tracking-[3px] text-zinc-500 mb-1">
+            Changer le mot de passe
+          </p>
+          {pwdSuccess ? (
+            <p className="text-green-400 text-sm py-1">✓ Mot de passe modifié avec succès.</p>
+          ) : (
+            <>
+              <Input label="Mot de passe actuel" type="password" value={oldPwd}
+                onChange={e => { setOldPwd(e.target.value); setPwdError(null) }} />
+              <Input label="Nouveau mot de passe" type="password" value={newPwd}
+                onChange={e => { setNewPwd(e.target.value); setPwdError(null) }} />
+              <Input label="Confirmer" type="password" value={confirmPwd}
+                onChange={e => { setConfirmPwd(e.target.value); setPwdError(null) }} />
+              {pwdError && <p className="text-red-400 text-xs">{pwdError}</p>}
+            </>
+          )}
+          <div className="flex gap-2 mt-1">
+            <Button variant="ghost" size="sm" onClick={togglePwd}>
+              {pwdSuccess ? 'Fermer' : 'Annuler'}
+            </Button>
+            {!pwdSuccess && (
+              <Button size="sm" fullWidth loading={pwdSaving} onClick={handleChangePwd}>
+                Enregistrer
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Actions (isSelf seulement) ── */}
+      {isSelf && !editing && (
+        <>
+          <div className="grid grid-cols-3 divide-x divide-zinc-800 border-t border-zinc-800">
+            <HeroActionBtn emoji="✏️" label="Modifier"   onClick={() => setEditing(true)} />
+            <HeroActionBtn emoji="🔑" label="Mot de passe" onClick={togglePwd} active={changingPwd} />
+            <HeroActionBtn emoji="🚪" label="Déconnexion" onClick={signOut} />
+          </div>
+          <div className="px-6 py-2.5 flex justify-end border-t border-zinc-800/50">
             <Link
               to="/palmares"
-              className="text-xs text-zinc-500 hover:text-white transition-colors underline underline-offset-2"
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors underline underline-offset-2"
             >
               Voir le palmarès
             </Link>
-            <button
-              onClick={signOut}
-              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors underline underline-offset-2"
-            >
-              Se déconnecter
-            </button>
           </div>
-        </div>
+        </>
       )}
     </div>
   )
 }
 
-// ── Statistiques ──────────────────────────────────────────────
+function HeroActionBtn({
+  emoji, label, onClick, active = false,
+}: { emoji: string; label: string; onClick: () => void; active?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center gap-1 py-3 transition-colors
+        ${active
+          ? 'bg-brand/10 text-brand'
+          : 'bg-zinc-900 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800'
+        }`}
+    >
+      <span className="text-base leading-none">{emoji}</span>
+      <span className="text-[8px] font-bold uppercase tracking-widest">{label}</span>
+    </button>
+  )
+}
 
-function StatsCard({ stats }: { stats: PlayerStats }) {
+// ── Section Statistiques ──────────────────────────────────────
+
+function StatsSection({ stats }: { stats: PlayerStats }) {
   return (
     <section>
-      <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
-        Statistiques
-      </h2>
+      <SectionTitle>Statistiques</SectionTitle>
       <div className="grid grid-cols-2 gap-3">
-        <StatBox label="Matchs joués" value={stats.matches_played} />
-        <StatBox label="Matchs gagnés" value={stats.matches_won} highlight />
-        <StatBox label="Taux de victoire" value={`${stats.win_rate}%`} />
-        <StatBox label="Tournois joués" value={stats.tournaments_played} />
-        <StatBox
-          label="Tournois gagnés"
-          value={stats.tournaments_won}
-          highlight={stats.tournaments_won > 0}
-          emoji={stats.tournaments_won > 0 ? '🏆' : undefined}
-        />
+        <RpgStatBox icon="⚔️" label="Matchs joués"     value={stats.matches_played} />
+        <RpgStatBox icon="🏆" label="Matchs gagnés"    value={stats.matches_won}    highlight />
+        <RpgStatBox icon="🎯" label="Tournois joués"   value={stats.tournaments_played} />
+        <RpgStatBox icon="👑" label="Tournois gagnés"  value={stats.tournaments_won}
+          highlight={stats.tournaments_won > 0} />
+      </div>
+      {/* Barre win rate */}
+      <div className="mt-3 flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+        <span className="text-[10px] uppercase tracking-widest text-zinc-600 w-16 shrink-0">Win rate</span>
+        <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-green-700 to-green-400 rounded-full transition-[width] duration-700"
+            style={{ width: `${stats.win_rate}%` }}
+          />
+        </div>
+        <span className="text-sm font-black text-green-400 w-10 text-right tabular-nums">
+          {stats.win_rate}%
+        </span>
       </div>
     </section>
   )
 }
 
-function StatBox({
-  label,
-  value,
-  highlight = false,
-  emoji,
-}: {
-  label: string
-  value: number | string
-  highlight?: boolean
-  emoji?: string
-}) {
+function RpgStatBox({
+  icon, label, value, highlight = false,
+}: { icon: string; label: string; value: number; highlight?: boolean }) {
   return (
-    <div
-      className={`rounded-2xl p-4 border ${
-        highlight
-          ? 'bg-brand/10 border-brand/30'
-          : 'bg-zinc-900 border-zinc-800'
-      }`}
+    <div className={`rounded-xl p-4 border relative overflow-hidden
+      ${highlight ? 'bg-brand/10 border-brand/25' : 'bg-zinc-900 border-zinc-800'}`}
     >
-      <p className={`text-3xl font-black ${highlight ? 'text-brand' : 'text-white'}`}>
-        {emoji && <span className="mr-1">{emoji}</span>}
-        {value}
-      </p>
+      {highlight && (
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
+      )}
+      <span className="text-xl block mb-1">{icon}</span>
+      <p className={`text-3xl font-black ${highlight ? 'text-brand' : 'text-white'}`}>{value}</p>
       <p className="text-zinc-500 text-xs mt-1">{label}</p>
     </div>
   )
 }
 
-// ── Tournois du joueur ────────────────────────────────────────
+// ── Section Règles Spéciales ──────────────────────────────────
 
-const STATUS_LABEL: Record<string, string> = {
-  registration: 'Inscriptions',
-  group_phase: 'Phase de groupes',
-  bracket_phase: 'Phases finales',
-  finished: 'Terminé',
-}
+function SpecialEventsSection({ stats }: { stats: PlayerStats }) {
+  const events = [
+    { emoji: '🔄', label: 'Balls Back',  value: stats.balls_back_count },
+    { emoji: '🏓', label: 'Rebonds',     value: stats.bounce_count     },
+    { emoji: '🎪', label: 'Trickshotsshots',   value: stats.trickshot_count  },
+    { emoji: '💥', label: 'Game Over',   value: stats.game_over_count  },
+  ]
 
-function TournamentsHistoryCard({ playerTournaments }: { playerTournaments: PlayerTournament[] }) {
   return (
     <section>
-      <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
-        Tournois ({playerTournaments.length})
-      </h2>
+      <SectionTitle>Règles Spéciales</SectionTitle>
+      <div className="grid grid-cols-2 gap-3">
+        {events.map(({ emoji, label, value }) => (
+          <div
+            key={label}
+            className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-3 relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-zinc-700/60 to-transparent" />
+            <span className="text-2xl leading-none">{emoji}</span>
+            <div>
+              <p className="text-2xl font-black text-white leading-none tabular-nums">{value}</p>
+              <p className="text-[9px] uppercase tracking-[2px] text-zinc-600 mt-0.5">{label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ── Section Badges ────────────────────────────────────────────
+
+function BadgesSection({ stats }: { stats: PlayerStats }) {
+  return (
+    <section>
+      <SectionTitle>Aptitudes & Badges</SectionTitle>
+      <div className="flex flex-wrap gap-2">
+        {BADGES.map(badge => {
+          const isUnlocked = badge.unlocked(stats)
+          return (
+            <div
+              key={badge.id}
+              className={`flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border transition-all
+                ${isUnlocked
+                  ? 'bg-brand/10 border-brand/30'
+                  : 'bg-zinc-900 border-zinc-800 opacity-40 grayscale'
+                }`}
+            >
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm
+                ${isUnlocked ? 'bg-brand/20' : 'bg-zinc-800'}`}
+              >
+                {badge.emoji}
+              </div>
+              <div>
+                <p className={`text-[10px] font-bold uppercase tracking-wide leading-none
+                  ${isUnlocked ? 'text-brand' : 'text-zinc-500'}`}
+                >
+                  {badge.name}
+                </p>
+                <p className="text-[9px] text-zinc-600 mt-0.5">{badge.desc}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+// ── Section Tournois ──────────────────────────────────────────
+
+const STATUS_LABEL: Record<string, string> = {
+  registration:   'Inscriptions',
+  group_phase:    'Groupes',
+  bracket_phase:  'Finales',
+  finished:       'Terminé',
+}
+
+function TournamentsSection({ playerTournaments }: { playerTournaments: PlayerTournament[] }) {
+  return (
+    <section>
+      <SectionTitle>Tournois ({playerTournaments.length})</SectionTitle>
       <div className="flex flex-col gap-2">
         {playerTournaments.map(({ tournament, teamName, won }) => (
           <div
             key={tournament.id}
-            className={`rounded-xl px-4 py-3 border flex items-center justify-between gap-3 ${
-              won
-                ? 'bg-brand/10 border-brand/30'
-                : 'bg-zinc-900 border-zinc-800'
-            }`}
+            className={`rounded-xl px-4 py-3 border flex items-center justify-between gap-3
+              ${won ? 'bg-brand/10 border-brand/25' : 'bg-zinc-900 border-zinc-800'}`}
           >
             <div className="min-w-0">
               <p className="font-semibold text-white text-sm truncate">
@@ -479,38 +612,14 @@ function TournamentsHistoryCard({ playerTournaments }: { playerTournaments: Play
               </p>
               <p className="text-zinc-500 text-xs mt-0.5 truncate">{teamName}</p>
             </div>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-              tournament.status === 'finished'
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0
+              ${tournament.status === 'finished'
                 ? 'bg-zinc-800 text-zinc-400'
                 : 'bg-blue-900/50 text-blue-300'
-            }`}>
+              }`}
+            >
               {STATUS_LABEL[tournament.status] ?? tournament.status}
             </span>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-// ── Équipes du joueur ─────────────────────────────────────────
-
-function TeamsCard({ teams }: { teams: Team[] }) {
-  return (
-    <section>
-      <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
-        Équipes ({teams.length})
-      </h2>
-      <div className="flex flex-col gap-2">
-        {teams.map((team) => (
-          <div
-            key={team.id}
-            className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
-          >
-            <p className="font-semibold text-white">{team.name}</p>
-            <p className="text-zinc-500 text-xs mt-0.5">
-              {[team.player1_name, team.player2_name].filter(Boolean).join(' & ')}
-            </p>
           </div>
         ))}
       </div>

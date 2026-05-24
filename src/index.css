@@ -24,6 +24,16 @@
     transform: scale(0.98);
   }
 
+  /* Effet flicker discret pour le nom du joueur (profil RPG) */
+  @keyframes flicker {
+    0%, 91%, 94%, 97%, 100% { opacity: 1; }
+    92%, 95% { opacity: 0.72; }
+    93%, 96% { opacity: 0.9; }
+  }
+  .flicker {
+    animation: flicker 7s ease-in-out infinite;
+  }
+
   /* Animation d'entrée pour la modal */
   @keyframes slide-up {
     from {
