@@ -16,13 +16,50 @@ export const DEFAULT_RANK_TIERS: RankTierConfig[] = [
 ]
 
 export const DEFAULT_BADGES: BadgeConfig[] = [
-  { id: 'first_win',   emoji: '🏆', name: 'Conquérant',   desc: '1er tournoi gagné',    stat: 'tournaments_won',    threshold: 1  },
-  { id: 'sniper',      emoji: '🎯', name: 'Sniper',        desc: '10 matchs joués',      stat: 'matches_played',     threshold: 10 },
-  { id: 'veteran',     emoji: '🍺', name: 'Vétéran',       desc: '3 tournois joués',     stat: 'tournaments_played', threshold: 3  },
-  { id: 'unstoppable', emoji: '💀', name: 'Inarrêtable',   desc: '5 tournois gagnés',    stat: 'tournaments_won',    threshold: 5  },
-  { id: 'bouncer',     emoji: '🏓', name: 'Rebondisseur',  desc: '5 rebonds réussis',    stat: 'bounce_count',       threshold: 5  },
-  { id: 'showman',     emoji: '🎪', name: 'Showman',       desc: '3 trickshots réussis', stat: 'trickshot_count',    threshold: 3  },
-  { id: 'double_kill', emoji: '💥', name: 'Double Balle',  desc: '3 Game Over causés',   stat: 'game_over_count',    threshold: 3  },
+  // ── Matchs joués ─────────────────────────────────────────────
+  { id: 'sniper',        emoji: '🎯', name: 'Sniper',            desc: '10 matchs joués',        stat: 'matches_played',     threshold: 10  },
+  { id: 'regular',       emoji: '🎮', name: 'Habitué',           desc: '25 matchs joués',        stat: 'matches_played',     threshold: 25  },
+  { id: 'warrior',       emoji: '⚔️',  name: 'Guerrier',          desc: '50 matchs joués',        stat: 'matches_played',     threshold: 50  },
+  { id: 'legend',        emoji: '🌟', name: 'Légende',           desc: '100 matchs joués',       stat: 'matches_played',     threshold: 100 },
+
+  // ── Matchs gagnés ────────────────────────────────────────────
+  { id: 'winner',        emoji: '🥇', name: 'Vainqueur',         desc: '5 matchs gagnés',        stat: 'matches_won',        threshold: 5   },
+  { id: 'dominant',      emoji: '💪', name: 'Dominant',          desc: '15 matchs gagnés',       stat: 'matches_won',        threshold: 15  },
+  { id: 'table_king',    emoji: '👑', name: 'Roi de la table',   desc: '30 matchs gagnés',       stat: 'matches_won',        threshold: 30  },
+
+  // ── Win rate ─────────────────────────────────────────────────
+  { id: 'tactician',     emoji: '🎲', name: 'Tacticien',         desc: '50% de win rate',        stat: 'win_rate',           threshold: 50  },
+  { id: 'relentless',    emoji: '⚡', name: 'Implacable',        desc: '70% de win rate',        stat: 'win_rate',           threshold: 70  },
+  { id: 'prophet',       emoji: '🔮', name: 'Prophète',          desc: '90% de win rate',        stat: 'win_rate',           threshold: 90  },
+
+  // ── Tournois joués ───────────────────────────────────────────
+  { id: 'veteran',       emoji: '🍺', name: 'Vétéran',           desc: '3 tournois joués',       stat: 'tournaments_played', threshold: 3   },
+  { id: 'competitor',    emoji: '🎖️', name: 'Compétiteur',       desc: '6 tournois joués',       stat: 'tournaments_played', threshold: 6   },
+  { id: 'pro',           emoji: '🌍', name: 'Pro',               desc: '10 tournois joués',      stat: 'tournaments_played', threshold: 10  },
+
+  // ── Tournois gagnés ──────────────────────────────────────────
+  { id: 'first_win',     emoji: '🏆', name: 'Conquérant',        desc: '1er tournoi gagné',      stat: 'tournaments_won',    threshold: 1   },
+  { id: 'unstoppable',   emoji: '💀', name: 'Inarrêtable',       desc: '5 tournois gagnés',      stat: 'tournaments_won',    threshold: 5   },
+
+  // ── Balls Back ───────────────────────────────────────────────
+  { id: 'boomerang',     emoji: '🔄', name: 'Boomerang',         desc: '1ère Balls Back',        stat: 'balls_back_count',   threshold: 1   },
+  { id: 'comeback',      emoji: '🌀', name: 'Retour de flamme',  desc: '5 Balls Back',           stat: 'balls_back_count',   threshold: 5   },
+  { id: 'magnet',        emoji: '🧲', name: 'Maître du retour',  desc: '15 Balls Back',          stat: 'balls_back_count',   threshold: 15  },
+
+  // ── Rebonds ──────────────────────────────────────────────────
+  { id: 'bouncer',       emoji: '🏓', name: 'Rebondisseur',      desc: '5 rebonds réussis',      stat: 'bounce_count',       threshold: 5   },
+  { id: 'kangaroo',      emoji: '🦘', name: 'Kangourou',         desc: '15 rebonds réussis',     stat: 'bounce_count',       threshold: 15  },
+  { id: 'maestro',       emoji: '🎯', name: 'Maestro',           desc: '30 rebonds réussis',     stat: 'bounce_count',       threshold: 30  },
+
+  // ── Trickshots ───────────────────────────────────────────────
+  { id: 'showman',       emoji: '🎪', name: 'Showman',           desc: '3 trickshots réussis',   stat: 'trickshot_count',    threshold: 3   },
+  { id: 'acrobat',       emoji: '🤹', name: 'Acrobate',          desc: '8 trickshots réussis',   stat: 'trickshot_count',    threshold: 8   },
+  { id: 'magician',      emoji: '🎩', name: 'Magicien',          desc: '20 trickshots réussis',  stat: 'trickshot_count',    threshold: 20  },
+
+  // ── Game Over ────────────────────────────────────────────────
+  { id: 'double_kill',   emoji: '💥', name: 'Double Balle',      desc: '3 Game Over causés',     stat: 'game_over_count',    threshold: 3   },
+  { id: 'destroyer',     emoji: '💣', name: 'Destructeur',       desc: '8 Game Over causés',     stat: 'game_over_count',    threshold: 8   },
+  { id: 'terminator',    emoji: '☠️',  name: 'Terminator',        desc: '20 Game Over causés',    stat: 'game_over_count',    threshold: 20  },
 ]
 
 export const DEFAULT_XP_WEIGHTS: XpWeights = {
