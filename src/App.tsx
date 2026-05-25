@@ -1,5 +1,6 @@
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import { ManagerRoute, ProfileRoute, RoleRedirect } from './components/ProtectedRoute'
 
 import { LoginScreen } from './screens/LoginScreen'
@@ -16,6 +17,7 @@ import { PalmaresScreen } from './screens/PalmaresScreen'
 
 export function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
@@ -53,5 +55,6 @@ export function App() {
         </Routes>
       </HashRouter>
     </AuthProvider>
+    </ThemeProvider>
   )
 }

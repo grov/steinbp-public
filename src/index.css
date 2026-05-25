@@ -2,6 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Thème Dark (défaut) ─────────────────────────────────────── */
+:root {
+  --color-white: 255 255 255;
+  --zinc-200:    228 228 231;
+  --zinc-300:    212 212 216;
+  --zinc-400:    161 161 170;
+  --zinc-500:    113 113 122;
+  --zinc-600:     82  82  91;
+  --zinc-700:     63  63  70;
+  --zinc-800:     39  39  42;
+  --zinc-900:     24  24  27;
+  --zinc-950:      9   9  11;
+}
+
+/* ── Thème Matrix ────────────────────────────────────────────── */
+[data-theme="matrix"] {
+  --color-white:   0 255  65;   /* #00ff41 — vert scanline iconique  */
+  --zinc-200:      0 255  65;   /* hover / emphasis = même que white */
+  --zinc-300:      0 230  54;   /* labels                            */
+  --zinc-400:      0 200  46;   /* texte légèrement atténué          */
+  --zinc-500:      0 170  38;   /* texte secondaire                  */
+  --zinc-600:      0 140  30;   /* titres de section, très atténué   */
+  --zinc-700:      0  90  20;   /* bordures subtiles                 */
+  --zinc-800:     10  26  10;   /* fond inputs, bordures             */
+  --zinc-900:      5  15   5;   /* fond cartes                       */
+  --zinc-950:      0   0   0;   /* fond page                         */
+}
+
+/* Scanlines CRT — overlay fixe, ne bloque aucune interaction */
+[data-theme="matrix"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 65, 0.03) 2px,
+    rgba(0, 255, 65, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
 @layer base {
   * {
     -webkit-tap-highlight-color: transparent;

@@ -12,6 +12,7 @@ import {
 import { fetchAppSettings, computeXp, getRankInfo, DEFAULT_SETTINGS } from '../lib/settingsActions'
 import { pb } from '../lib/pocketbase'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import type { Player, PlayerStats, Team } from '../types/database'
@@ -189,6 +190,7 @@ function HeroCard({
   const [pwdSuccess, setPwdSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { signOut, refreshPlayer } = useAuth()
+  const { theme, cycleTheme } = useTheme()
 
   const rankInfo = stats
     ? getRankInfo(computeXp(stats, settings.xp_weights), settings.rank_tiers)
@@ -377,9 +379,14 @@ function HeroCard({
       {/* ── Actions (isSelf seulement) ── */}
       {isSelf && !editing && (
         <>
-          <div className="grid grid-cols-3 divide-x divide-zinc-800 border-t border-zinc-800">
-            <HeroActionBtn emoji="✏️" label="Modifier"   onClick={() => setEditing(true)} />
+          <div className="grid grid-cols-4 divide-x divide-zinc-800 border-t border-zinc-800">
+            <HeroActionBtn emoji="✏️" label="Modifier"     onClick={() => setEditing(true)} />
             <HeroActionBtn emoji="🔑" label="Mot de passe" onClick={togglePwd} active={changingPwd} />
+            <HeroActionBtn
+              emoji={theme === 'matrix' ? '🖥️' : '🌑'}
+              label={theme === 'matrix' ? 'Matrix' : 'Dark'}
+              onClick={cycleTheme}
+            />
             <HeroActionBtn emoji="🚪" label="Déconnexion" onClick={signOut} />
           </div>
           <div className="px-6 py-2.5 flex justify-end border-t border-zinc-800/50">
