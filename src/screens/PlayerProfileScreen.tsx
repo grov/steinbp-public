@@ -12,7 +12,7 @@ import {
 import { fetchAppSettings, computeXp, getRankInfo, DEFAULT_SETTINGS } from '../lib/settingsActions'
 import { pb } from '../lib/pocketbase'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
+import { useTheme, THEME_META } from '../context/ThemeContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import type { Player, PlayerStats, Team } from '../types/database'
@@ -383,8 +383,8 @@ function HeroCard({
             <HeroActionBtn emoji="✏️" label="Modifier"     onClick={() => setEditing(true)} />
             <HeroActionBtn emoji="🔑" label="Mot de passe" onClick={togglePwd} active={changingPwd} />
             <HeroActionBtn
-              emoji={theme === 'matrix' ? '🖥️' : '🌑'}
-              label={theme === 'matrix' ? 'Matrix' : 'Dark'}
+              emoji={THEME_META[theme].emoji}
+              label={THEME_META[theme].label}
               onClick={cycleTheme}
             />
             <HeroActionBtn emoji="🚪" label="Déconnexion" onClick={signOut} />

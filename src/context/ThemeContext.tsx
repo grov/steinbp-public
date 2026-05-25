@@ -1,8 +1,16 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
-export type Theme = 'dark' | 'matrix'
+export type Theme = 'dark' | 'matrix' | 'synthwave' | 'blood' | 'amber'
 
-const THEMES: Theme[] = ['dark', 'matrix']
+const THEMES: Theme[] = ['dark', 'matrix', 'synthwave', 'blood', 'amber']
+
+export const THEME_META: Record<Theme, { emoji: string; label: string }> = {
+  dark:      { emoji: '🌑', label: 'Dark'     },
+  matrix:    { emoji: '🖥️', label: 'Matrix'   },
+  synthwave: { emoji: '⚡', label: 'Synth'    },
+  blood:     { emoji: '🩸', label: 'Blood'    },
+  amber:     { emoji: '🕯️', label: 'Amber'    },
+}
 
 interface ThemeContextValue {
   theme: Theme
@@ -19,7 +27,7 @@ const ThemeContext = createContext<ThemeContextValue>({
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem('theme')
-    return stored === 'matrix' ? 'matrix' : 'dark'
+    return (THEMES.includes(stored as Theme) ? stored : 'dark') as Theme
   })
 
   useEffect(() => {

@@ -30,6 +30,93 @@
   --zinc-950:      0   0   0;   /* fond page                         */
 }
 
+/* ── Thème Synthwave ─────────────────────────────────────────── */
+[data-theme="synthwave"] {
+  --color-white: 232 121 249;   /* #e879f9 — fuchsia néon             */
+  --zinc-200:    232 121 249;   /* hover / emphasis                   */
+  --zinc-300:    192 132 252;   /* #c084fc — violet clair             */
+  --zinc-400:    168  85 247;   /* #a855f7 — violet medium            */
+  --zinc-500:    120  50 180;   /* texte secondaire                   */
+  --zinc-600:     80  20 120;   /* titres de section                  */
+  --zinc-700:     59  10  74;   /* #3b0a4a — bordures subtiles        */
+  --zinc-800:     26   0  40;   /* #1a0028 — fond inputs              */
+  --zinc-900:     13   0  24;   /* #0d0018 — fond cartes              */
+  --zinc-950:      5   0   8;   /* #050008 — fond page                */
+}
+
+[data-theme="synthwave"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(232, 121, 249, 0.025) 2px,
+    rgba(232, 121, 249, 0.025) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Thème Blood Moon ────────────────────────────────────────── */
+[data-theme="blood"] {
+  --color-white: 255  68  68;   /* #ff4444 — rouge vif                */
+  --zinc-200:    255  68  68;   /* hover / emphasis                   */
+  --zinc-300:    255 100 100;   /* rouge clair                        */
+  --zinc-400:    220  40  40;   /* rouge medium                       */
+  --zinc-500:    180  26  26;   /* texte secondaire                   */
+  --zinc-600:    130  16  16;   /* titres de section                  */
+  --zinc-700:     80  10  10;   /* bordures subtiles                  */
+  --zinc-800:     32   5   5;   /* #200505 — fond inputs              */
+  --zinc-900:     16   2   2;   /* #100202 — fond cartes              */
+  --zinc-950:      0   0   0;   /* fond page                          */
+}
+
+[data-theme="blood"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 68, 68, 0.025) 2px,
+    rgba(255, 68, 68, 0.025) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Thème Amber Terminal ────────────────────────────────────── */
+[data-theme="amber"] {
+  --color-white: 255 179   0;   /* #ffb300 — ambre chaud              */
+  --zinc-200:    255 179   0;   /* hover / emphasis                   */
+  --zinc-300:    255 160   0;   /* #ffa000                            */
+  --zinc-400:    224 140   0;   /* légèrement atténué                 */
+  --zinc-500:    192 112   0;   /* texte secondaire                   */
+  --zinc-600:    144  84   0;   /* titres de section                  */
+  --zinc-700:     96  56   0;   /* bordures subtiles                  */
+  --zinc-800:     26  16   0;   /* #1a1000 — fond inputs              */
+  --zinc-900:     15   8   0;   /* #0f0800 — fond cartes              */
+  --zinc-950:     10   5   0;   /* #0a0500 — fond page (brun-noir)    */
+}
+
+[data-theme="amber"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 179, 0, 0.025) 2px,
+    rgba(255, 179, 0, 0.025) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
 /* Scanlines CRT — overlay fixe, ne bloque aucune interaction */
 [data-theme="matrix"] body::before {
   content: '';
