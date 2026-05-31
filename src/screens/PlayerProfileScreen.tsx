@@ -181,6 +181,13 @@ function HeroCard({
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url)
+  const safeAvatarUrl = (() => {
+    if (!avatarUrl) return null
+    try {
+      const { protocol } = new URL(avatarUrl)
+      return protocol === 'http:' || protocol === 'https:' ? avatarUrl : null
+    } catch { return null }
+  })()
   const [changingPwd, setChangingPwd] = useState(false)
   const [oldPwd, setOldPwd] = useState('')
   const [newPwd, setNewPwd] = useState('')
@@ -275,8 +282,8 @@ function HeroCard({
                   style={{ clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)' }}
                   className="w-[88px] h-[88px] bg-zinc-800 overflow-hidden flex items-center justify-center text-3xl font-black text-zinc-400"
                 >
-                  {avatarUrl
-                    ? <img src={avatarUrl} alt={profile.display_name} className="w-full h-full object-cover" />
+                  {safeAvatarUrl
+                    ? <img src={safeAvatarUrl} alt={profile.display_name} className="w-full h-full object-cover" />
                     : profile.display_name?.[0]?.toUpperCase() ?? '?'
                   }
                 </div>

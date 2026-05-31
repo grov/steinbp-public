@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signOut() {
     pb.authStore.clear()
-    window.location.replace(window.location.origin + window.location.pathname + '#/login')
+    window.location.replace(window.location.origin + '/#/login')
   }
 
   return (
