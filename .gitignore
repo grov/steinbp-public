@@ -24,6 +24,7 @@ Thumbs.db
 # PocketBase — données locales (ne pas committer)
 pocketbase/pb_data/
 
-# Capacitor — projets natifs générés (créés en CI, jamais committés)
+# Capacitor — projets natifs et sources d'icône générés (créés en CI)
 /android/
 /ios/
+/assets/

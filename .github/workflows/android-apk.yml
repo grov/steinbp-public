@@ -1,15 +1,17 @@
 name: Build Android APK
 
-# Génère un APK Android à partir du front (via Capacitor).
-# Lancement manuel depuis l'onglet "Actions" de GitHub : on y saisit
-# l'URL publique du serveur PocketBase que l'app doit contacter.
+# Génère un APK Android à partir du front (via Capacitor), avec l'icône
+# du jeu comme icône de lanceur.
+# Lancement manuel depuis l'onglet "Actions" de GitHub. L'URL PocketBase
+# est pré-remplie avec le serveur public ; on peut la surcharger au besoin.
 
 on:
   workflow_dispatch:
     inputs:
       pocketbase_url:
-        description: "URL publique de PocketBase (ex: https://pb.mondomaine.com)"
-        required: true
+        description: "URL publique de PocketBase"
+        required: false
+        default: "https://steinbp.fr"
         type: string
 
 jobs:
@@ -31,16 +33,20 @@ jobs:
 
       - name: Build web app
         env:
-          # L'APK tourne sur le téléphone : il faut l'URL publique du serveur,
-          # pas localhost. Fournie au lancement du workflow.
+          # L'APK tourne sur le téléphone : il faut l'URL publique du serveur.
           VITE_POCKETBASE_URL: ${{ github.event.inputs.pocketbase_url }}
         run: npm run build
 
-      - name: Install Capacitor
-        run: npm install -D @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+      - name: Install Capacitor toolchain
+        run: npm install -D @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor/assets@3 sharp
 
       - name: Add Android platform
         run: npx cap add android
+
+      - name: Generate app icon from game logo
+        run: |
+          node scripts/generate-app-icon.mjs
+          npx capacitor-assets generate --android --iconBackgroundColor '#09090b' --iconBackgroundColorDark '#09090b'
 
       - name: Sync web build into Android project
         run: npx cap sync android
