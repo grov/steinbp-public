@@ -1,18 +1,13 @@
 name: Build Android APK
 
-# Génère un APK Android à partir du front (via Capacitor), avec l'icône
-# du jeu comme icône de lanceur.
-# Lancement manuel depuis l'onglet "Actions" de GitHub. L'URL PocketBase
-# est pré-remplie avec le serveur public ; on peut la surcharger au besoin.
+# Génère un APK Android (via Capacitor) avec l'icône du jeu.
+# L'app charge le site en ligne (https://steinbp.fr, voir capacitor.config.json)
+# comme une fenêtre native : pas besoin de reconstruire l'APK quand on modifie
+# l'application — seulement si on change l'icône ou le nom.
+# Lancement manuel depuis l'onglet "Actions" de GitHub.
 
 on:
   workflow_dispatch:
-    inputs:
-      pocketbase_url:
-        description: "URL publique de PocketBase"
-        required: false
-        default: "https://steinbp.fr"
-        type: string
 
 jobs:
   build-apk:
@@ -33,8 +28,10 @@ jobs:
 
       - name: Build web app
         env:
-          # L'APK tourne sur le téléphone : il faut l'URL publique du serveur.
-          VITE_POCKETBASE_URL: ${{ github.event.inputs.pocketbase_url }}
+          # Le bundle web n'est pas utilisé par l'APK (qui charge le site en
+          # ligne), mais Capacitor exige un dossier webDir présent. On fournit
+          # l'URL par cohérence.
+          VITE_POCKETBASE_URL: "https://steinbp.fr"
         run: npm run build
 
       - name: Install Capacitor toolchain
