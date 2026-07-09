@@ -30,6 +30,18 @@ export async function deleteChallenge(challengeId: string): Promise<void> {
 
 // ── Lecture ───────────────────────────────────────────────────
 
+export async function fetchAllChallenges(): Promise<Challenge[]> {
+  try {
+    const records = await pb.collection('challenges').getFullList({
+      sort: '-created',
+      requestKey: null,
+    })
+    return records.map(recordToChallenge)
+  } catch {
+    return []
+  }
+}
+
 export async function fetchPlayerChallenges(playerId: string): Promise<Challenge[]> {
   try {
     const records = await pb.collection('challenges').getFullList({
