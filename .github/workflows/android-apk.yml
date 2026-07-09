@@ -1,0 +1,68 @@
+name: Build Android APK
+
+# Génère un APK Android à partir du front (via Capacitor).
+# Lancement manuel depuis l'onglet "Actions" de GitHub : on y saisit
+# l'URL publique du serveur PocketBase que l'app doit contacter.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pocketbase_url:
+        description: "URL publique de PocketBase (ex: https://pb.mondomaine.com)"
+        required: true
+        type: string
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        env:
+          # L'APK tourne sur le téléphone : il faut l'URL publique du serveur,
+          # pas localhost. Fournie au lancement du workflow.
+          VITE_POCKETBASE_URL: ${{ github.event.inputs.pocketbase_url }}
+        run: npm run build
+
+      - name: Install Capacitor
+        run: npm install -D @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Sync web build into Android project
+        run: npx cap sync android
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: steinbp-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
