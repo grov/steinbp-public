@@ -217,7 +217,7 @@ export function CustomTab() {
           {sortedTiers.length > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1 border-t border-zinc-800">
               {sortedTiers.map(tier => {
-                const exampleStats = { matches_played: tier.min, matches_won: 0, win_rate: 0, tournaments_played: 0, tournaments_won: 0, balls_back_count: 0, bounce_count: 0, trickshot_count: 0, game_over_count: 0, redemption_count: 0, contre_son_camp_count: 0 }
+                const exampleStats = { matches_played: tier.min, matches_won: 0, win_rate: 0, tournaments_played: 0, tournaments_won: 0, challenges_played: 0, challenges_won: 0, balls_back_count: 0, bounce_count: 0, trickshot_count: 0, game_over_count: 0, redemption_count: 0, contre_son_camp_count: 0 }
                 const xp = computeXp(exampleStats, draft.xp_weights)
                 return (
                   <span key={tier.name} className="text-[10px] px-2 py-0.5 bg-zinc-800 rounded-full text-zinc-400">

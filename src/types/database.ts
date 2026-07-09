@@ -185,6 +185,8 @@ export interface PlayerStats {
   win_rate: number
   tournaments_played: number
   tournaments_won: number
+  challenges_played: number
+  challenges_won: number
   // Règles spéciales
   game_over_count: number
   balls_back_count: number

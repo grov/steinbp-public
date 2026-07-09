@@ -85,11 +85,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 // ── Helpers ───────────────────────────────────────────────────
 
-/** Calcule le score XP d'un joueur selon les poids configurés */
+/** Calcule le score XP d'un joueur selon les poids configurés.
+ *  Les défis rapportent de l'XP au même titre que les matchs de tournoi
+ *  (un défi joué/gagné compte comme un match joué/gagné). */
 export function computeXp(stats: PlayerStats, weights: XpWeights): number {
+  const played = stats.matches_played + stats.challenges_played
+  const won    = stats.matches_won    + stats.challenges_won
   return Math.round(
-    stats.matches_played  * weights.matches_played +
-    stats.matches_won     * weights.matches_won    +
+    played                * weights.matches_played +
+    won                   * weights.matches_won    +
     stats.tournaments_won * weights.tournaments_won,
   )
 }

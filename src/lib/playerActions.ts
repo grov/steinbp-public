@@ -183,21 +183,23 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
   }
 
   // ── Défis (hors tournoi) ────────────────────────────────────
-  // Comptent dans les matchs joués/gagnés (donc dans l'XP) et les tricks,
-  // mais jamais dans les tournois gagnés (classement séparé).
+  // Catégorie à part (comme les tournois). Les tricks des défis comptent,
+  // et l'XP les prend en compte (voir computeXp), mais ils ne gonflent pas
+  // les stats de matchs ou de tournois.
   const challengesPlayed = challenges.length
   const challengesWon = challenges.filter((c) => challengeWinnerIsPlayer(c, playerId)).length
   for (const c of challenges) addAttributedTricks(c.trick_events)
 
-  const matchesPlayed = tournamentMatchesPlayed + challengesPlayed
-  const matchesWon = tournamentMatchesWon + challengesWon
-
   return {
-    matches_played: matchesPlayed,
-    matches_won: matchesWon,
-    win_rate: matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0,
+    matches_played: tournamentMatchesPlayed,
+    matches_won: tournamentMatchesWon,
+    win_rate: tournamentMatchesPlayed > 0
+      ? Math.round((tournamentMatchesWon / tournamentMatchesPlayed) * 100)
+      : 0,
     tournaments_played: tournamentIds.length,
     tournaments_won: tournamentsWon,
+    challenges_played: challengesPlayed,
+    challenges_won: challengesWon,
     game_over_count:       tricks.game_over,
     balls_back_count:      tricks.balls_back,
     bounce_count:          tricks.bounce,

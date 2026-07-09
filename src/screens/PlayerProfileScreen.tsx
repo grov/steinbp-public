@@ -446,6 +446,9 @@ function StatsSection({ stats }: { stats: PlayerStats }) {
         <RpgStatBox icon="🎯" label="Tournois joués"   value={stats.tournaments_played} />
         <RpgStatBox icon="👑" label="Tournois gagnés"  value={stats.tournaments_won}
           highlight={stats.tournaments_won > 0} />
+        <RpgStatBox icon="🥊" label="Défis joués"      value={stats.challenges_played} />
+        <RpgStatBox icon="🏅" label="Défis gagnés"     value={stats.challenges_won}
+          highlight={stats.challenges_won > 0} />
       </div>
       {/* Barre win rate */}
       <div className="mt-3 flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
