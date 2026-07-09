@@ -1,26 +1,18 @@
 import { useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
-import type { MatchWithRelations, SpecialEvents } from '../../types/database'
+import { TrickAttributionPanel, slotsFromTeams } from './TrickAttributionPanel'
+import type { MatchWithRelations, TrickEvent } from '../../types/database'
 
 interface ScoreModalProps {
   match: MatchWithRelations | null
   cupsPerSide: number
-  onConfirm: (winnerId: string, cupsRemaining: number, specialEvents: SpecialEvents) => Promise<void>
+  onConfirm: (winnerId: string, cupsRemaining: number, trickEvents: TrickEvent[]) => Promise<void>
   onClose: () => void
   editMode?: boolean
 }
 
 type Step = 'winner' | 'cups'
-
-const DEFAULT_SPECIAL_EVENTS: SpecialEvents = {
-  game_over: false,
-  balls_back_count: 0,
-  bounce_count: 0,
-  trickshot_count: 0,
-  redemption_count: 0,
-  contre_son_camp_count: 0,
-}
 
 export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = false }: ScoreModalProps) {
   const [step, setStep] = useState<Step>(() =>
@@ -32,23 +24,15 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
   const [cups, setCups] = useState<number>(() =>
     editMode && match?.winner_cups_remaining != null ? match.winner_cups_remaining : 1,
   )
-  const [specialEvents, setSpecialEvents] = useState<SpecialEvents>(() =>
-    editMode && match
-      ? {
-          game_over: match.game_over ?? false,
-          balls_back_count: match.balls_back_count ?? 0,
-          bounce_count: match.bounce_count ?? 0,
-          trickshot_count: match.trickshot_count ?? 0,
-          redemption_count: match.redemption_count ?? 0,
-          contre_son_camp_count: match.contre_son_camp_count ?? 0,
-        }
-      : { ...DEFAULT_SPECIAL_EVENTS },
+  const [trickEvents, setTrickEvents] = useState<TrickEvent[]>(() =>
+    editMode && match?.trick_events ? [...match.trick_events] : [],
   )
   const [loading, setLoading] = useState(false)
 
   if (!match) return null
 
   const { team1, team2 } = match
+  const slots = slotsFromTeams(team1, team2)
 
   function handleSelectWinner(id: string) {
     setWinnerId(id)
@@ -60,7 +44,7 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
     if (!winnerId) return
     setLoading(true)
     try {
-      await onConfirm(winnerId, cups, specialEvents)
+      await onConfirm(winnerId, cups, trickEvents)
       handleClose()
     } finally {
       setLoading(false)
@@ -71,12 +55,8 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
     setStep('winner')
     setWinnerId(null)
     setCups(1)
-    setSpecialEvents({ ...DEFAULT_SPECIAL_EVENTS })
+    setTrickEvents([])
     onClose()
-  }
-
-  function updateEvent<K extends keyof SpecialEvents>(key: K, value: SpecialEvents[K]) {
-    setSpecialEvents((prev) => ({ ...prev, [key]: value }))
   }
 
   const winnerTeam = winnerId === team1?.id ? team1 : team2
@@ -148,86 +128,17 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
             </div>
           </div>
 
-          {/* ── Règles spéciales ── */}
+          {/* ── Tricks (attribués par joueur) ── */}
           <div>
             <div className="flex items-center gap-3 mb-3">
               <div className="flex-1 h-px bg-zinc-800" />
               <p className="text-zinc-500 text-xs font-semibold uppercase tracking-widest">
-                Règles spéciales
+                Qui a fait quoi ?
               </p>
               <div className="flex-1 h-px bg-zinc-800" />
             </div>
 
-            <div className="flex flex-col gap-2">
-              {/* GAME OVER — toggle */}
-              <button
-                onClick={() => updateEvent('game_over', !specialEvents.game_over)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left
-                  ${specialEvents.game_over
-                    ? 'bg-red-500/15 border-red-500/40 text-red-300'
-                    : 'bg-zinc-800/60 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                  }`}
-              >
-                <span className="text-xl leading-none">💥</span>
-                <div className="flex-1">
-                  <p className="font-bold text-sm">GAME OVER</p>
-                  <p className="text-xs opacity-60">2 balles dans le même verre</p>
-                </div>
-                <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all
-                  ${specialEvents.game_over
-                    ? 'bg-red-500 border-red-500 text-white'
-                    : 'border-zinc-600'
-                  }`}
-                >
-                  {specialEvents.game_over && <span className="text-xs font-bold">✓</span>}
-                </span>
-              </button>
-
-              {/* BALLS BACK — compteur */}
-              <SpecialEventCounter
-                emoji="🔄"
-                label="BALLS BACK"
-                description="2 balles dans des verres différents"
-                value={specialEvents.balls_back_count}
-                onChange={(v) => updateEvent('balls_back_count', v)}
-              />
-
-              {/* REBOND — compteur */}
-              <SpecialEventCounter
-                emoji="🏓"
-                label="REBOND"
-                description="Rebond sur la table réussi"
-                value={specialEvents.bounce_count}
-                onChange={(v) => updateEvent('bounce_count', v)}
-              />
-
-              {/* TRICKSHOT — compteur */}
-              <SpecialEventCounter
-                emoji="🎪"
-                label="TRICKSHOT"
-                description="Lancer spécial réussi"
-                value={specialEvents.trickshot_count}
-                onChange={(v) => updateEvent('trickshot_count', v)}
-              />
-
-              {/* REDEMPTION — compteur */}
-              <SpecialEventCounter
-                emoji="🔥"
-                label="REDEMPTION"
-                description="Dernier verre rentré pour sauver le match"
-                value={specialEvents.redemption_count}
-                onChange={(v) => updateEvent('redemption_count', v)}
-              />
-
-              {/* CONTRE SON CAMP — compteur (bourde) */}
-              <SpecialEventCounter
-                emoji="🤦"
-                label="CONTRE SON CAMP"
-                description="Balle envoyée dans son propre camp"
-                value={specialEvents.contre_son_camp_count}
-                onChange={(v) => updateEvent('contre_son_camp_count', v)}
-              />
-            </div>
+            <TrickAttributionPanel slots={slots} events={trickEvents} onChange={setTrickEvents} />
           </div>
 
           {/* Actions */}
@@ -242,63 +153,6 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
         </div>
       )}
     </Modal>
-  )
-}
-
-// ── Compteur pour une règle spéciale ─────────────────────────
-
-function SpecialEventCounter({
-  emoji,
-  label,
-  description,
-  value,
-  onChange,
-}: {
-  emoji: string
-  label: string
-  description: string
-  value: number
-  onChange: (v: number) => void
-}) {
-  const isActive = value > 0
-
-  return (
-    <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all
-        ${isActive
-          ? 'bg-brand/10 border-brand/30 text-white'
-          : 'bg-zinc-800/60 border-zinc-700 text-zinc-400'
-        }`}
-    >
-      <span className="text-xl leading-none">{emoji}</span>
-      <div className="flex-1 min-w-0">
-        <p className={`font-bold text-sm ${isActive ? 'text-white' : ''}`}>{label}</p>
-        <p className="text-xs opacity-60">{description}</p>
-      </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <button
-          onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-7 h-7 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white font-bold text-sm
-                     active:scale-95 transition-all select-none flex items-center justify-center"
-          aria-label={`Moins ${label}`}
-        >
-          −
-        </button>
-        <span className={`w-6 text-center font-black text-base tabular-nums
-          ${isActive ? 'text-brand' : 'text-zinc-500'}`}
-        >
-          {value}
-        </span>
-        <button
-          onClick={() => onChange(value + 1)}
-          className="w-7 h-7 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white font-bold text-sm
-                     active:scale-95 transition-all select-none flex items-center justify-center"
-          aria-label={`Plus ${label}`}
-        >
-          +
-        </button>
-      </div>
-    </div>
   )
 }
 

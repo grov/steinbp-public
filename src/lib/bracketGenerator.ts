@@ -1,6 +1,6 @@
 import { pb } from './pocketbase'
 import type { RecordModel } from 'pocketbase'
-import type { Match, Team, Tournament } from '../types/database'
+import type { Match, Team, Tournament, TrickEvent } from '../types/database'
 
 // ── Utilitaires mathématiques ─────────────────────────────────
 
@@ -62,6 +62,7 @@ function recordToMatch(record: RecordModel): Match {
     trickshot_count: (record['trickshot_count'] as number) ?? 0,
     redemption_count: (record['redemption_count'] as number) ?? 0,
     contre_son_camp_count: (record['contre_son_camp_count'] as number) ?? 0,
+    trick_events: (record['trick_events'] as TrickEvent[] | null) ?? [],
   }
 }
 

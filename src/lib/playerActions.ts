@@ -1,6 +1,6 @@
 import { pb, fileUrl } from './pocketbase'
 import type { RecordModel } from 'pocketbase'
-import type { Player, PlayerStats, Tournament } from '../types/database'
+import type { Player, PlayerStats, Tournament, TrickEvent } from '../types/database'
 
 export interface PlayerTournament {
   tournament: Tournament
@@ -138,7 +138,7 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
 
   const allMatches = await pb.collection('matches').getFullList({
     filter: `(${teamFilter}) && status = "finished"`,
-    fields: 'id,team1_id,team2_id,winner_id,next_match_id,phase,tournament_id,status,game_over,balls_back_count,bounce_count,trickshot_count,redemption_count,contre_son_camp_count',
+    fields: 'id,team1_id,team2_id,winner_id,next_match_id,phase,tournament_id,status,game_over,balls_back_count,bounce_count,trickshot_count,redemption_count,contre_son_camp_count,trick_events',
     requestKey: null,
   })
 
@@ -155,12 +155,30 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
       teamIds.includes(m['winner_id'] as string),
   ).length
 
-  const gameOverCount     = allMatches.filter((m) => m['game_over'] === true).length
-  const ballsBackCount    = allMatches.reduce((s, m) => s + ((m['balls_back_count']      as number) ?? 0), 0)
-  const bounceCount       = allMatches.reduce((s, m) => s + ((m['bounce_count']          as number) ?? 0), 0)
-  const trickshotCount    = allMatches.reduce((s, m) => s + ((m['trickshot_count']       as number) ?? 0), 0)
-  const redemptionCount   = allMatches.reduce((s, m) => s + ((m['redemption_count']      as number) ?? 0), 0)
-  const contreSonCampCount = allMatches.reduce((s, m) => s + ((m['contre_son_camp_count'] as number) ?? 0), 0)
+  // Tricks : depuis la v2.1 on attribue les tricks au joueur qui les a
+  // réalisés (via trick_events). Les matchs antérieurs n'ont pas
+  // d'attribution : on retombe alors sur les compteurs agrégés du match.
+  const tricks = {
+    game_over: 0, balls_back: 0, bounce: 0,
+    trickshot: 0, redemption: 0, contre_son_camp: 0,
+  }
+  for (const m of allMatches) {
+    const events = (m['trick_events'] as TrickEvent[] | null) ?? []
+    if (events.length > 0) {
+      for (const e of events) {
+        if (e.player_id !== playerId) continue
+        tricks[e.type] += e.count
+      }
+    } else {
+      // Ancien match sans attribution → compteurs agrégés
+      tricks.game_over       += m['game_over'] === true ? 1 : 0
+      tricks.balls_back      += (m['balls_back_count']      as number) ?? 0
+      tricks.bounce          += (m['bounce_count']          as number) ?? 0
+      tricks.trickshot       += (m['trickshot_count']       as number) ?? 0
+      tricks.redemption      += (m['redemption_count']      as number) ?? 0
+      tricks.contre_son_camp += (m['contre_son_camp_count'] as number) ?? 0
+    }
+  }
 
   return {
     matches_played: matchesPlayed,
@@ -168,12 +186,12 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
     win_rate: matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0,
     tournaments_played: tournamentIds.length,
     tournaments_won: tournamentsWon,
-    game_over_count:       gameOverCount,
-    balls_back_count:      ballsBackCount,
-    bounce_count:          bounceCount,
-    trickshot_count:       trickshotCount,
-    redemption_count:      redemptionCount,
-    contre_son_camp_count: contreSonCampCount,
+    game_over_count:       tricks.game_over,
+    balls_back_count:      tricks.balls_back,
+    bounce_count:          tricks.bounce,
+    trickshot_count:       tricks.trickshot,
+    redemption_count:      tricks.redemption,
+    contre_son_camp_count: tricks.contre_son_camp,
   }
 }
 

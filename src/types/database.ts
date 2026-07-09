@@ -73,6 +73,25 @@ export interface SpecialEvents {
   contre_son_camp_count: number
 }
 
+// ── Tricks attribués à un joueur ──────────────────────────────
+// Un trick est réalisé par un joueur précis (parmi les 4 d'un match, ou
+// les 2 d'un défi). Les invités (sans compte lié) ont player_id = null.
+
+export type TrickType =
+  | 'game_over'
+  | 'balls_back'
+  | 'bounce'
+  | 'trickshot'
+  | 'redemption'
+  | 'contre_son_camp'
+
+export interface TrickEvent {
+  player_id: string | null
+  player_name: string
+  type: TrickType
+  count: number
+}
+
 export interface Match {
   id: string
   tournament_id: string
@@ -91,13 +110,15 @@ export interface Match {
   started_at: string | null
   finished_at: string | null
   created: string
-  // Règles spéciales
+  // Règles spéciales (compteurs agrégés, dérivés de trick_events)
   game_over: boolean
   balls_back_count: number
   bounce_count: number
   trickshot_count: number
   redemption_count: number
   contre_son_camp_count: number
+  // Tricks attribués par joueur (source de vérité depuis la v2.1)
+  trick_events: TrickEvent[]
 }
 
 // ── Types enrichis (avec relations jointes) ───────────────────

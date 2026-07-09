@@ -17,10 +17,11 @@ import type {
   GroupWithStandings,
   Match,
   MatchWithRelations,
-  SpecialEvents,
   Team,
   Tournament,
+  TrickEvent,
 } from '../types/database'
+import { aggregateTrickEvents } from './tricks'
 
 // ── Helpers de mapping ────────────────────────────────────────
 
@@ -91,6 +92,7 @@ function recordToMatch(r: RecordModel): Match {
     trickshot_count: (r['trickshot_count'] as number) ?? 0,
     redemption_count: (r['redemption_count'] as number) ?? 0,
     contre_son_camp_count: (r['contre_son_camp_count'] as number) ?? 0,
+    trick_events: (r['trick_events'] as TrickEvent[] | null) ?? [],
   }
 }
 
@@ -213,19 +215,21 @@ export async function finishMatch(
   winnerId: string,
   winnerCupsRemaining: number,
   cupsPerSide: number,
-  specialEvents?: Partial<SpecialEvents>,
+  trickEvents: TrickEvent[] = [],
 ): Promise<void> {
+  const agg = aggregateTrickEvents(trickEvents)
   await pb.collection('matches').update(match.id, {
     winner_id: winnerId,
     winner_cups_remaining: winnerCupsRemaining,
     status: 'finished',
     finished_at: new Date().toISOString(),
-    game_over: specialEvents?.game_over ?? false,
-    balls_back_count: specialEvents?.balls_back_count ?? 0,
-    bounce_count: specialEvents?.bounce_count ?? 0,
-    trickshot_count: specialEvents?.trickshot_count ?? 0,
-    redemption_count: specialEvents?.redemption_count ?? 0,
-    contre_son_camp_count: specialEvents?.contre_son_camp_count ?? 0,
+    trick_events: trickEvents,
+    game_over: agg.game_over,
+    balls_back_count: agg.balls_back_count,
+    bounce_count: agg.bounce_count,
+    trickshot_count: agg.trickshot_count,
+    redemption_count: agg.redemption_count,
+    contre_son_camp_count: agg.contre_son_camp_count,
   })
 
   if (match.table_id) {
@@ -250,19 +254,21 @@ export async function editMatchResult(
   newWinnerId: string,
   newCupsRemaining: number,
   cupsPerSide: number,
-  specialEvents?: Partial<SpecialEvents>,
+  trickEvents: TrickEvent[] = [],
 ): Promise<void> {
   const oldWinnerId = match.winner_id
+  const agg = aggregateTrickEvents(trickEvents)
 
   await pb.collection('matches').update(match.id, {
     winner_id: newWinnerId,
     winner_cups_remaining: newCupsRemaining,
-    game_over: specialEvents?.game_over ?? false,
-    balls_back_count: specialEvents?.balls_back_count ?? 0,
-    bounce_count: specialEvents?.bounce_count ?? 0,
-    trickshot_count: specialEvents?.trickshot_count ?? 0,
-    redemption_count: specialEvents?.redemption_count ?? 0,
-    contre_son_camp_count: specialEvents?.contre_son_camp_count ?? 0,
+    trick_events: trickEvents,
+    game_over: agg.game_over,
+    balls_back_count: agg.balls_back_count,
+    bounce_count: agg.bounce_count,
+    trickshot_count: agg.trickshot_count,
+    redemption_count: agg.redemption_count,
+    contre_son_camp_count: agg.contre_son_camp_count,
   })
 
   const winnerChanged = newWinnerId !== oldWinnerId
