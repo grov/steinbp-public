@@ -139,6 +139,32 @@ export interface GroupWithStandings extends Group {
   matches: MatchWithRelations[]
 }
 
+// ── Défi (match hors tournoi, 1v1) ────────────────────────────
+
+export interface Challenge {
+  id: string
+  player1_id: string
+  player2_id: string | null
+  player1_name: string
+  player2_name: string
+  winner_id: string | null
+  winner_name: string
+  trick_events: TrickEvent[]
+  created_by: string | null
+  created: string
+}
+
+export interface CreateChallengePayload {
+  player1_id: string
+  player2_id: string | null
+  player1_name: string
+  player2_name: string
+  winner_id: string | null
+  winner_name: string
+  trick_events: TrickEvent[]
+  created_by: string
+}
+
 export type PlayerStatus = 'pending' | 'approved' | 'rejected'
 export type PlayerRole = 'admin' | 'organisateur' | 'joueur'
 

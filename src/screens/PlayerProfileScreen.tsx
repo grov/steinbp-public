@@ -396,7 +396,13 @@ function HeroCard({
             />
             <HeroActionBtn emoji="🚪" label="Déconnexion" onClick={signOut} />
           </div>
-          <div className="px-6 py-2.5 flex justify-end border-t border-zinc-800/50">
+          <div className="px-6 py-2.5 flex justify-between items-center border-t border-zinc-800/50">
+            <Link
+              to="/challenges"
+              className="text-xs text-brand/80 hover:text-brand transition-colors underline underline-offset-2"
+            >
+              ⚔️ Mes défis
+            </Link>
             <Link
               to="/palmares"
               className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors underline underline-offset-2"

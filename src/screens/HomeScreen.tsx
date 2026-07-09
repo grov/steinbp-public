@@ -43,6 +43,12 @@ export function HomeScreen() {
               >
                 Mon profil
               </Link>
+              <Link
+                to="/challenges"
+                className="text-xs text-brand/80 hover:text-brand transition-colors underline underline-offset-2"
+              >
+                ⚔️ Défis
+              </Link>
               <button
                 onClick={signOut}
                 className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors underline underline-offset-2"

@@ -1,6 +1,7 @@
 import { pb, fileUrl } from './pocketbase'
 import type { RecordModel } from 'pocketbase'
 import type { Player, PlayerStats, Tournament, TrickEvent } from '../types/database'
+import { fetchPlayerChallenges, challengeWinnerIsPlayer } from './challengeActions'
 
 export interface PlayerTournament {
   tournament: Tournament
@@ -116,69 +117,80 @@ export async function uploadAvatar(playerId: string, file: File): Promise<string
 // ── Statistiques ──────────────────────────────────────────────
 
 export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
-  const teams = await pb.collection('teams').getFullList({
-    filter: `player1_id = "${playerId}" || player2_id = "${playerId}"`,
-    fields: 'id,tournament_id',
-    requestKey: null,
-  })
+  const [teams, challenges] = await Promise.all([
+    pb.collection('teams').getFullList({
+      filter: `player1_id = "${playerId}" || player2_id = "${playerId}"`,
+      fields: 'id,tournament_id',
+      requestKey: null,
+    }),
+    fetchPlayerChallenges(playerId),
+  ])
 
-  if (teams.length === 0) {
-    return {
-      matches_played: 0, matches_won: 0, win_rate: 0,
-      tournaments_played: 0, tournaments_won: 0,
-      game_over_count: 0, balls_back_count: 0, bounce_count: 0, trickshot_count: 0,
-      redemption_count: 0, contre_son_camp_count: 0,
-    }
-  }
-
-  const teamIds = teams.map((t) => t.id)
-  const tournamentIds = [...new Set(teams.map((t) => t['tournament_id'] as string))]
-
-  const teamFilter = teamIds.map((id) => `team1_id = "${id}" || team2_id = "${id}"`).join(' || ')
-
-  const allMatches = await pb.collection('matches').getFullList({
-    filter: `(${teamFilter}) && status = "finished"`,
-    fields: 'id,team1_id,team2_id,winner_id,next_match_id,phase,tournament_id,status,game_over,balls_back_count,bounce_count,trickshot_count,redemption_count,contre_son_camp_count,trick_events',
-    requestKey: null,
-  })
-
-  const matchesPlayed = allMatches.length
-  const matchesWon = allMatches.filter(
-    (m) => m['winner_id'] && teamIds.includes(m['winner_id'] as string),
-  ).length
-
-  const tournamentsWon = allMatches.filter(
-    (m) =>
-      m['phase'] === 'bracket' &&
-      !m['next_match_id'] &&
-      m['winner_id'] &&
-      teamIds.includes(m['winner_id'] as string),
-  ).length
-
-  // Tricks : depuis la v2.1 on attribue les tricks au joueur qui les a
-  // réalisés (via trick_events). Les matchs antérieurs n'ont pas
-  // d'attribution : on retombe alors sur les compteurs agrégés du match.
+  // Tricks attribués au joueur (tournois + défis partagent le même compteur).
   const tricks = {
     game_over: 0, balls_back: 0, bounce: 0,
     trickshot: 0, redemption: 0, contre_son_camp: 0,
   }
-  for (const m of allMatches) {
-    const events = (m['trick_events'] as TrickEvent[] | null) ?? []
-    if (events.length > 0) {
-      for (const e of events) {
-        if (e.player_id !== playerId) continue
-        tricks[e.type] += e.count
-      }
-    } else {
-      // Ancien match sans attribution → compteurs agrégés
-      tricks.game_over       += m['game_over'] === true ? 1 : 0
-      tricks.balls_back      += (m['balls_back_count']      as number) ?? 0
-      tricks.bounce          += (m['bounce_count']          as number) ?? 0
-      tricks.trickshot       += (m['trickshot_count']       as number) ?? 0
-      tricks.redemption      += (m['redemption_count']      as number) ?? 0
-      tricks.contre_son_camp += (m['contre_son_camp_count'] as number) ?? 0
+  function addAttributedTricks(events: TrickEvent[]) {
+    for (const e of events) {
+      if (e.player_id !== playerId) continue
+      tricks[e.type] += e.count
     }
   }
+
+  // ── Matchs de tournoi ───────────────────────────────────────
+  let tournamentMatchesPlayed = 0
+  let tournamentMatchesWon = 0
+  let tournamentsWon = 0
+  const tournamentIds = [...new Set(teams.map((t) => t['tournament_id'] as string))]
+
+  if (teams.length > 0) {
+    const teamIds = teams.map((t) => t.id)
+    const teamFilter = teamIds.map((id) => `team1_id = "${id}" || team2_id = "${id}"`).join(' || ')
+
+    const allMatches = await pb.collection('matches').getFullList({
+      filter: `(${teamFilter}) && status = "finished"`,
+      fields: 'id,team1_id,team2_id,winner_id,next_match_id,phase,tournament_id,status,game_over,balls_back_count,bounce_count,trickshot_count,redemption_count,contre_son_camp_count,trick_events',
+      requestKey: null,
+    })
+
+    tournamentMatchesPlayed = allMatches.length
+    tournamentMatchesWon = allMatches.filter(
+      (m) => m['winner_id'] && teamIds.includes(m['winner_id'] as string),
+    ).length
+    tournamentsWon = allMatches.filter(
+      (m) =>
+        m['phase'] === 'bracket' &&
+        !m['next_match_id'] &&
+        m['winner_id'] &&
+        teamIds.includes(m['winner_id'] as string),
+    ).length
+
+    for (const m of allMatches) {
+      const events = (m['trick_events'] as TrickEvent[] | null) ?? []
+      if (events.length > 0) {
+        addAttributedTricks(events)
+      } else {
+        // Ancien match sans attribution → compteurs agrégés du match
+        tricks.game_over       += m['game_over'] === true ? 1 : 0
+        tricks.balls_back      += (m['balls_back_count']      as number) ?? 0
+        tricks.bounce          += (m['bounce_count']          as number) ?? 0
+        tricks.trickshot       += (m['trickshot_count']       as number) ?? 0
+        tricks.redemption      += (m['redemption_count']      as number) ?? 0
+        tricks.contre_son_camp += (m['contre_son_camp_count'] as number) ?? 0
+      }
+    }
+  }
+
+  // ── Défis (hors tournoi) ────────────────────────────────────
+  // Comptent dans les matchs joués/gagnés (donc dans l'XP) et les tricks,
+  // mais jamais dans les tournois gagnés (classement séparé).
+  const challengesPlayed = challenges.length
+  const challengesWon = challenges.filter((c) => challengeWinnerIsPlayer(c, playerId)).length
+  for (const c of challenges) addAttributedTricks(c.trick_events)
+
+  const matchesPlayed = tournamentMatchesPlayed + challengesPlayed
+  const matchesWon = tournamentMatchesWon + challengesWon
 
   return {
     matches_played: matchesPlayed,

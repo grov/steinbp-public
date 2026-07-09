@@ -14,6 +14,8 @@ import { RegisterTeamsScreen } from './screens/RegisterTeamsScreen'
 import { TournamentDashboard } from './screens/TournamentDashboard'
 import { PublicDisplayScreen } from './screens/PublicDisplayScreen'
 import { PalmaresScreen } from './screens/PalmaresScreen'
+import { ChallengesScreen } from './screens/ChallengesScreen'
+import { NewChallengeScreen } from './screens/NewChallengeScreen'
 
 export function App() {
   return (
@@ -39,6 +41,14 @@ export function App() {
           <Route
             path="/palmares"
             element={<ProfileRoute><PalmaresScreen /></ProfileRoute>}
+          />
+          <Route
+            path="/challenges"
+            element={<ProfileRoute><ChallengesScreen /></ProfileRoute>}
+          />
+          <Route
+            path="/challenges/new"
+            element={<ProfileRoute><NewChallengeScreen /></ProfileRoute>}
           />
 
           {/* ── Admin + Organisateur ─────────────────────── */}
