@@ -5,21 +5,49 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0-orange?style=flat-square" alt="v2.0" />
+  <img src="https://img.shields.io/badge/version-3.0-orange?style=flat-square" alt="v3.0" />
   <img src="https://img.shields.io/badge/stack-React%20%2B%20PocketBase-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/deploy-Docker%20%2B%20Traefik-informational?style=flat-square" />
   <img src="https://img.shields.io/badge/PWA-installable-green?style=flat-square" />
+  <img src="https://img.shields.io/badge/Android-APK-brightgreen?style=flat-square" />
 </p>
 
 ## Présentation
 
 **SteinBP** est une application web mobile-first conçue pour organiser et suivre des tournois de beer pong. Elle gère l'ensemble du cycle de vie d'un tournoi : inscriptions, création des brackets, saisie des scores en temps réel avec règles spéciales, et un **système de progression RPG** complet avec rangs, XP et badges — entièrement personnalisable depuis l'interface d'administration.
 
-L'application est accessible depuis n'importe quel navigateur et peut être installée sur mobile comme une application native (PWA).
+L'application est accessible depuis n'importe quel navigateur, installable comme une application native (PWA) et disponible en **APK Android**.
 
 ---
 
-## Nouveautés v2 🆕
+## Nouveautés v3 🆕
+
+La version 3 ajoute un **mode Défi** hors tournoi, l'**attribution des tricks au joueur** qui les réalise, un **palmarès repensé** et une **app Android** installable.
+
+### ⚔️ Mode Défi (1v1)
+
+Un match rapide entre deux joueurs, en dehors de tout tournoi. On choisit l'adversaire (compte lié ou invité), le vainqueur et les tricks. Les défis alimentent les **tricks** et l'**XP** au même titre que les matchs de tournoi, mais disposent d'un **classement séparé** (tête-à-tête par adversaire) — les titres de tournoi ne sont jamais dévalués.
+
+### 🎯 Tricks attribués par joueur
+
+La saisie de score demande désormais **« Qui a fait quoi ? »** : chaque trick est attribué au joueur précis qui l'a réalisé (parmi les 4 joueurs d'un match ou les 2 d'un défi). Les statistiques de tricks sont donc enfin **justes** — chacun ne récolte que ses propres exploits.
+
+### 🆕 Deux nouveaux tricks
+
+- **Redemption** 🔥 — dernier verre rentré pour sauver le match
+- **Contre son camp** 🤦 — la bourde : balle envoyée dans son propre camp (ne rapporte pas d'XP)
+
+### 🏆 Palmarès par joueur + filtres
+
+Le palmarès n'est plus par équipe mais par **joueur unique** (agrégé sur l'ensemble de ses matchs), avec un filtre **Tournois / Défis** pour basculer entre les deux classements. Les joueurs liés à un compte sont cliquables vers leur profil.
+
+### 📱 App Android (APK)
+
+Un workflow GitHub Actions génère un **APK Android** (via Capacitor) avec le logo du jeu en icône. L'app affiche le site en ligne dans une fenêtre native : elle suit automatiquement la version déployée, sans reconstruction à chaque mise à jour.
+
+---
+
+## Nouveautés v2
 
 La version 2 introduit un **système de méta-jeu** autour des statistiques des joueurs, avec une expérience de profil entièrement repensée.
 
@@ -41,7 +69,7 @@ Les admins peuvent **tout personnaliser** sans toucher au code :
 
 ### 🎯 Règles spéciales
 
-4 règles de beer pong intégrées à la saisie des scores, qui alimentent directement les statistiques des joueurs :
+Des règles de beer pong intégrées à la saisie des scores, qui alimentent directement les statistiques des joueurs. Depuis la v3, chaque trick est **attribué au joueur** qui l'a réalisé :
 
 | Règle | Description |
 |-------|-------------|
@@ -49,6 +77,8 @@ Les admins peuvent **tout personnaliser** sans toucher au code :
 | **Game Over** | 2 balles dans le même verre |
 | **Rebond** | Balle qui rebondit avant d'entrer |
 | **Trickshot** | Tir avec technique spéciale |
+| **Redemption** 🆕 | Dernier verre rentré pour sauver le match |
+| **Contre son camp** 🆕 | Balle envoyée dans son propre camp (bourde) |
 
 ### 🦸 Profil héros
 
@@ -60,9 +90,9 @@ Le profil joueur a été entièrement redesigné dans un style RPG : avatar hexa
 
 | Rôle | Accès |
 |------|-------|
-| **Admin** | Tout : joueurs, tournois, palmarès, profil, **onglet Custom** |
-| **Organisateur** | Ses propres tournois, palmarès, profil |
-| **Joueur** | Son profil, palmarès |
+| **Admin** | Tout : joueurs, tournois, palmarès, défis, profil, **onglet Custom** |
+| **Organisateur** | Ses propres tournois, palmarès, défis, profil |
+| **Joueur** | Son profil, palmarès, défis |
 
 ---
 
@@ -72,8 +102,8 @@ Le profil joueur a été entièrement redesigné dans un style RPG : avatar hexa
 - **Gestion des joueurs** — valider ou refuser les inscriptions, modifier le rôle (admin / organisateur / joueur), supprimer un compte
 - **Gestion des tournois** — accès à tous les tournois, suppression
 - **Création de tournoi** — format élimination directe ou poules + arbre, nombre de tables, gobelets par côté
-- **Dashboard en temps réel** — suivi des matchs, assignation des tables, saisie des scores avec règles spéciales
-- **Palmarès global** — classement de toutes les équipes
+- **Dashboard en temps réel** — suivi des matchs, assignation des tables, saisie des scores avec tricks attribués par joueur
+- **Palmarès joueurs** — classement des joueurs uniques, filtrable Tournois / Défis
 - **Onglet Custom** — personnalisation complète du système RPG (rangs, XP, badges)
 
 ### Organisateur
@@ -84,10 +114,11 @@ Le profil joueur a été entièrement redesigné dans un style RPG : avatar hexa
 
 ### Joueur
 - **Profil héros** — avatar hexagonal, rang actuel, barre de progression XP
-- **Statistiques complètes** — matchs joués/gagnés, win rate, tournois, règles spéciales (Balls Back, Rebonds, Trickshots, Game Over)
+- **Statistiques complètes** — matchs, tournois **et défis** (joués/gagnés), win rate, tricks (Balls Back, Rebonds, Trickshots, Game Over, Redemption, Contre son camp)
+- **Défis** — lancer un match 1v1 et suivre son classement tête-à-tête
 - **Collection de badges** — badges débloqués mis en avant, badges verrouillés en grisé
 - **Historique des tournois** — liste des participations avec équipe et résultat
-- **Palmarès** — classement global de toutes les équipes
+- **Palmarès** — classement des joueurs, filtrable Tournois / Défis
 
 ---
 
@@ -100,6 +131,8 @@ L'XP d'un joueur est calculée selon une formule pondérée, configurable depuis
 ```
 XP = (matchs joués × poids_1) + (matchs gagnés × poids_2) + (tournois gagnés × poids_3)
 ```
+
+> Les **défis** comptent dans l'XP au même titre que les matchs de tournoi (un défi joué/gagné = un match joué/gagné).
 
 Les rangs par défaut :
 
@@ -114,7 +147,7 @@ Les rangs par défaut :
 | Stein II | 🏆 | 75 |
 | Maître | 👑 | 100 |
 
-### Badges (27 par défaut)
+### Badges (32 par défaut)
 
 | Catégorie | Badges |
 |-----------|--------|
@@ -127,6 +160,8 @@ Les rangs par défaut :
 | Rebonds | 🏓 Rebondisseur · 🦘 Kangourou · 🎯 Maestro |
 | Trickshots | 🎪 Showman · 🤹 Acrobate · 🎩 Magicien |
 | Game Over | 💥 Double Balle · 💣 Destructeur · ☠️ Terminator |
+| Redemption | 🔥 Phénix · 🛡️ Survivant · 💫 Immortel |
+| Contre son camp | 🤦 Boulet · 🃏 Saboteur |
 
 > Tous les noms, emojis, seuils et catégories sont modifiables depuis l'onglet **Custom**.
 
@@ -150,6 +185,19 @@ Phase de groupes avec classement (victoires, différence de gobelets), suivie d'
 4. Les matchs sont joués ; les scores sont saisis en temps réel depuis le dashboard (avec règles spéciales)
 5. Le bracket avance automatiquement jusqu'à la finale
 6. Le tournoi est clôturé, le palmarès est mis à jour et les statistiques joueurs sont recalculées
+
+---
+
+## Mode Défi
+
+Un **défi** est un match 1v1 joué en dehors de tout tournoi — idéal pour une partie rapide entre amis.
+
+1. Depuis le profil (ou l'accueil), ouvrir **⚔️ Défis** → **Nouveau défi**
+2. Choisir l'adversaire : un joueur avec un compte lié, ou un simple nom (invité)
+3. Désigner le vainqueur et attribuer les tricks à chaque joueur
+4. Enregistrer
+
+Les défis sont **cloisonnés** des tournois : ils ont leur propre **classement tête-à-tête** (bilan victoires/défaites face à chaque adversaire) et n'entrent jamais dans les titres de tournoi. En revanche, leurs **tricks** et l'**XP** gagnée comptent dans la progression RPG du joueur, exactement comme un match de tournoi.
 
 ---
 
@@ -186,6 +234,28 @@ L'application peut être installée directement depuis le navigateur :
 2. Appuyer sur le bouton Partager → *Sur l'écran d'accueil*
 
 Une fois installée, l'app se lance en plein écran sans barre de navigateur, comme une application native.
+
+---
+
+## App Android (APK)
+
+En plus de la PWA, un **APK Android** peut être généré via GitHub Actions (avec le logo du jeu en icône).
+
+### Générer l'APK
+
+1. Onglet **Actions** du dépôt → workflow **Build Android APK**
+2. **Run workflow** (lancement manuel)
+3. Récupérer l'artifact **`steinbp-apk`** puis installer `app-debug.apk` sur le téléphone
+
+### Fonctionnement
+
+L'APK est un conteneur natif (via [Capacitor](https://capacitorjs.com/)) qui affiche le site en ligne (`server.url` dans `capacitor.config.json`). Concrètement :
+
+- L'app **suit automatiquement la version déployée** — inutile de reconstruire l'APK à chaque modification de l'application.
+- On ne régénère l'APK que pour changer **l'icône ou le nom**.
+- Une **connexion internet** est requise (l'app parle au serveur, comme dans le navigateur).
+
+> L'APK produit est en mode *debug* (non signé) : parfait pour une installation manuelle. Une version *release* signée nécessiterait un keystore fourni en secret GitHub.
 
 ---
 
@@ -261,6 +331,7 @@ Les mises à jour de PocketBase corrigent régulièrement des failles de sécuri
 | Temps réel | PocketBase Realtime (WebSockets) |
 | Conteneurisation | Docker + Nginx |
 | PWA | vite-plugin-pwa (Workbox) |
+| App Android | Capacitor (APK via GitHub Actions) |
 | Reverse proxy | Traefik (optionnel, production) |
 
 ---
@@ -363,6 +434,16 @@ Les releases disponibles sont listées sur [github.com/pocketbase/pocketbase/rel
 ---
 
 ## Changelog
+
+### v3.0
+- ⚔️ **Mode Défi** : matchs 1v1 hors tournoi, avec classement tête-à-tête séparé
+- 🎯 **Tricks attribués par joueur** — la saisie de score demande « Qui a fait quoi ? », les stats de tricks sont enfin justes
+- 🆕 Deux nouveaux tricks : **Redemption** 🔥 et **Contre son camp** 🤦
+- 🏅 5 nouveaux badges (Phénix, Survivant, Immortel, Boulet, Saboteur) — 32 badges au total
+- 🏆 **Palmarès par joueur unique** avec filtre Tournois / Défis (fin des doublons par équipe)
+- 🥊 Stats de **défis** ajoutées au profil ; les défis rapportent de l'XP comme les matchs de tournoi
+- 📱 **APK Android** généré via GitHub Actions (Capacitor), suit automatiquement le site déployé
+- 🎲 Nombre de tables par défaut ramené à 1 à la création d'un tournoi
 
 ### v2.0
 - ✨ Système de progression RPG (XP, rangs, barre de progression)
