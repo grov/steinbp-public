@@ -60,6 +60,8 @@ function recordToMatch(record: RecordModel): Match {
     balls_back_count: (record['balls_back_count'] as number) ?? 0,
     bounce_count: (record['bounce_count'] as number) ?? 0,
     trickshot_count: (record['trickshot_count'] as number) ?? 0,
+    redemption_count: (record['redemption_count'] as number) ?? 0,
+    contre_son_camp_count: (record['contre_son_camp_count'] as number) ?? 0,
   }
 }
 

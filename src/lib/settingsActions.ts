@@ -60,6 +60,15 @@ export const DEFAULT_BADGES: BadgeConfig[] = [
   { id: 'double_kill',   emoji: '💥', name: 'Double Balle',      desc: '3 Game Over causés',     stat: 'game_over_count',    threshold: 3   },
   { id: 'destroyer',     emoji: '💣', name: 'Destructeur',       desc: '8 Game Over causés',     stat: 'game_over_count',    threshold: 8   },
   { id: 'terminator',    emoji: '☠️',  name: 'Terminator',        desc: '20 Game Over causés',    stat: 'game_over_count',    threshold: 20  },
+
+  // ── Redemption ───────────────────────────────────────────────
+  { id: 'phoenix',       emoji: '🔥', name: 'Phénix',            desc: '1ère Redemption',        stat: 'redemption_count',   threshold: 1   },
+  { id: 'survivor',      emoji: '🛡️',  name: 'Survivant',         desc: '5 Redemptions',          stat: 'redemption_count',   threshold: 5   },
+  { id: 'immortal',      emoji: '💫', name: 'Immortel',          desc: '15 Redemptions',         stat: 'redemption_count',   threshold: 15  },
+
+  // ── Contre son camp (bourdes) ────────────────────────────────
+  { id: 'clumsy',        emoji: '🤦', name: 'Boulet',            desc: '1 contre son camp',      stat: 'contre_son_camp_count', threshold: 1 },
+  { id: 'saboteur',      emoji: '🃏', name: 'Saboteur',          desc: '5 contres son camp',     stat: 'contre_son_camp_count', threshold: 5 },
 ]
 
 export const DEFAULT_XP_WEIGHTS: XpWeights = {

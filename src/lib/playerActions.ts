@@ -127,6 +127,7 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
       matches_played: 0, matches_won: 0, win_rate: 0,
       tournaments_played: 0, tournaments_won: 0,
       game_over_count: 0, balls_back_count: 0, bounce_count: 0, trickshot_count: 0,
+      redemption_count: 0, contre_son_camp_count: 0,
     }
   }
 
@@ -137,7 +138,7 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
 
   const allMatches = await pb.collection('matches').getFullList({
     filter: `(${teamFilter}) && status = "finished"`,
-    fields: 'id,team1_id,team2_id,winner_id,next_match_id,phase,tournament_id,status,game_over,balls_back_count,bounce_count,trickshot_count',
+    fields: 'id,team1_id,team2_id,winner_id,next_match_id,phase,tournament_id,status,game_over,balls_back_count,bounce_count,trickshot_count,redemption_count,contre_son_camp_count',
     requestKey: null,
   })
 
@@ -154,10 +155,12 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
       teamIds.includes(m['winner_id'] as string),
   ).length
 
-  const gameOverCount  = allMatches.filter((m) => m['game_over'] === true).length
-  const ballsBackCount = allMatches.reduce((s, m) => s + ((m['balls_back_count'] as number) ?? 0), 0)
-  const bounceCount    = allMatches.reduce((s, m) => s + ((m['bounce_count']     as number) ?? 0), 0)
-  const trickshotCount = allMatches.reduce((s, m) => s + ((m['trickshot_count']  as number) ?? 0), 0)
+  const gameOverCount     = allMatches.filter((m) => m['game_over'] === true).length
+  const ballsBackCount    = allMatches.reduce((s, m) => s + ((m['balls_back_count']      as number) ?? 0), 0)
+  const bounceCount       = allMatches.reduce((s, m) => s + ((m['bounce_count']          as number) ?? 0), 0)
+  const trickshotCount    = allMatches.reduce((s, m) => s + ((m['trickshot_count']       as number) ?? 0), 0)
+  const redemptionCount   = allMatches.reduce((s, m) => s + ((m['redemption_count']      as number) ?? 0), 0)
+  const contreSonCampCount = allMatches.reduce((s, m) => s + ((m['contre_son_camp_count'] as number) ?? 0), 0)
 
   return {
     matches_played: matchesPlayed,
@@ -165,10 +168,12 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
     win_rate: matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0,
     tournaments_played: tournamentIds.length,
     tournaments_won: tournamentsWon,
-    game_over_count:  gameOverCount,
-    balls_back_count: ballsBackCount,
-    bounce_count:     bounceCount,
-    trickshot_count:  trickshotCount,
+    game_over_count:       gameOverCount,
+    balls_back_count:      ballsBackCount,
+    bounce_count:          bounceCount,
+    trickshot_count:       trickshotCount,
+    redemption_count:      redemptionCount,
+    contre_son_camp_count: contreSonCampCount,
   }
 }
 

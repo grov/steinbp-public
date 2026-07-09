@@ -14,7 +14,7 @@ export function CreateTournamentScreen() {
   const [form, setForm] = useState<CreateTournamentPayload>({
     name: '',
     format: 'single_elimination',
-    num_tables: 2,
+    num_tables: 1,
     cups_per_side: 10,
     groups_count: 4,
     teams_advance_per_group: 2,

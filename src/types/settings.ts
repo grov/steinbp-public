@@ -22,6 +22,8 @@ export type BadgeStat = keyof Pick<
   | 'bounce_count'
   | 'trickshot_count'
   | 'game_over_count'
+  | 'redemption_count'
+  | 'contre_son_camp_count'
 >
 
 export interface BadgeConfig {

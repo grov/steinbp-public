@@ -89,6 +89,8 @@ function recordToMatch(r: RecordModel): Match {
     balls_back_count: (r['balls_back_count'] as number) ?? 0,
     bounce_count: (r['bounce_count'] as number) ?? 0,
     trickshot_count: (r['trickshot_count'] as number) ?? 0,
+    redemption_count: (r['redemption_count'] as number) ?? 0,
+    contre_son_camp_count: (r['contre_son_camp_count'] as number) ?? 0,
   }
 }
 
@@ -222,6 +224,8 @@ export async function finishMatch(
     balls_back_count: specialEvents?.balls_back_count ?? 0,
     bounce_count: specialEvents?.bounce_count ?? 0,
     trickshot_count: specialEvents?.trickshot_count ?? 0,
+    redemption_count: specialEvents?.redemption_count ?? 0,
+    contre_son_camp_count: specialEvents?.contre_son_camp_count ?? 0,
   })
 
   if (match.table_id) {
@@ -257,6 +261,8 @@ export async function editMatchResult(
     balls_back_count: specialEvents?.balls_back_count ?? 0,
     bounce_count: specialEvents?.bounce_count ?? 0,
     trickshot_count: specialEvents?.trickshot_count ?? 0,
+    redemption_count: specialEvents?.redemption_count ?? 0,
+    contre_son_camp_count: specialEvents?.contre_son_camp_count ?? 0,
   })
 
   const winnerChanged = newWinnerId !== oldWinnerId

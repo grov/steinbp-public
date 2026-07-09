@@ -18,6 +18,8 @@ const DEFAULT_SPECIAL_EVENTS: SpecialEvents = {
   balls_back_count: 0,
   bounce_count: 0,
   trickshot_count: 0,
+  redemption_count: 0,
+  contre_son_camp_count: 0,
 }
 
 export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = false }: ScoreModalProps) {
@@ -37,6 +39,8 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
           balls_back_count: match.balls_back_count ?? 0,
           bounce_count: match.bounce_count ?? 0,
           trickshot_count: match.trickshot_count ?? 0,
+          redemption_count: match.redemption_count ?? 0,
+          contre_son_camp_count: match.contre_son_camp_count ?? 0,
         }
       : { ...DEFAULT_SPECIAL_EVENTS },
   )
@@ -204,6 +208,24 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
                 description="Lancer spécial réussi"
                 value={specialEvents.trickshot_count}
                 onChange={(v) => updateEvent('trickshot_count', v)}
+              />
+
+              {/* REDEMPTION — compteur */}
+              <SpecialEventCounter
+                emoji="🔥"
+                label="REDEMPTION"
+                description="Dernier verre rentré pour sauver le match"
+                value={specialEvents.redemption_count}
+                onChange={(v) => updateEvent('redemption_count', v)}
+              />
+
+              {/* CONTRE SON CAMP — compteur (bourde) */}
+              <SpecialEventCounter
+                emoji="🤦"
+                label="CONTRE SON CAMP"
+                description="Balle envoyée dans son propre camp"
+                value={specialEvents.contre_son_camp_count}
+                onChange={(v) => updateEvent('contre_son_camp_count', v)}
               />
             </div>
           </div>

@@ -69,6 +69,8 @@ export interface SpecialEvents {
   balls_back_count: number
   bounce_count: number
   trickshot_count: number
+  redemption_count: number
+  contre_son_camp_count: number
 }
 
 export interface Match {
@@ -94,6 +96,8 @@ export interface Match {
   balls_back_count: number
   bounce_count: number
   trickshot_count: number
+  redemption_count: number
+  contre_son_camp_count: number
 }
 
 // ── Types enrichis (avec relations jointes) ───────────────────
@@ -139,6 +143,8 @@ export interface PlayerStats {
   balls_back_count: number
   bounce_count: number
   trickshot_count: number
+  redemption_count: number
+  contre_son_camp_count: number
 }
 
 // ── Payloads pour les mutations ───────────────────────────────
