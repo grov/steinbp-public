@@ -12,7 +12,7 @@ services:
       - internal
       - bw-services
     ports:
-      - "127.0.0.1:8091:8090"
+      - "8091:8090"
     restart: unless-stopped
 
   steinbp:
