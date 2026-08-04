@@ -30,6 +30,7 @@ services:
     restart: unless-stopped
     labels:
       - "bunkerweb.USE_MODSECURITY=no"
+      - "bunkerweb.USE_BAD_BEHAVIOR=no"
       - "bunkerweb.ALLOWED_METHODS=GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS"
 
 networks:
