@@ -10,7 +10,6 @@ services:
       - pocketbase_data:/pb/pb_data
     networks:
       - internal
-      - bw-services
     ports:
       - "8091:8090"
     restart: unless-stopped
@@ -24,23 +23,13 @@ services:
       - pocketbase
     networks:
       - internal
-      - bw-services
     ports:
       - "${APP_PORT:-80}:80"
     restart: unless-stopped
-    labels:
-      - "bunkerweb.USE_MODSECURITY=no"
-      - "bunkerweb.USE_BAD_BEHAVIOR=no"
-      - "bunkerweb.USE_LIMIT_REQ=no"
-      - "bunkerweb.USE_ANTIBOT=no"
-      - "bunkerweb.USE_DNSBL=no"
-      - "bunkerweb.ALLOWED_METHODS=GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS"
 
 networks:
   internal:
     driver: bridge
-  bw-services:
-    external: true
 
 volumes:
   pocketbase_data:
