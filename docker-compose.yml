@@ -28,6 +28,9 @@ services:
     ports:
       - "${APP_PORT:-80}:80"
     restart: unless-stopped
+    labels:
+      # Allow all HTTP methods needed by PocketBase (BunkerWeb blocks DELETE/PATCH/PUT by default)
+      - "bunkerweb.ALLOWED_METHODS=GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS"
 
 networks:
   internal:

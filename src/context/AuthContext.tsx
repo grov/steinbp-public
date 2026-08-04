@@ -64,7 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (active) setLoading(false)
     }, 15_000)
 
-    // Déclenche immédiatement avec l'état courant (localStorage), puis à chaque changement
+    // Déclenche immédiatement avec l'état courant (localStorage), puis à chaque changement.
+    // Ne pilote PAS loading ici : c'est authRefresh (ou l'else ci-dessous) qui le fait,
+    // pour éviter que le formulaire de login s'affiche pendant que authRefresh est en vol.
     const unsubAuth = pb.authStore.onChange((token, model) => {
       if (!active) return
 
@@ -75,12 +77,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null)
         setPlayer(null)
       }
-      setLoading(false)
     }, true)
 
-    // Valide et rafraîchit le token au démarrage
+    // Valide et rafraîchit le token au démarrage ; loading reste true jusqu'à la réponse.
     if (pb.authStore.isValid) {
-      pb.collection('users').authRefresh().catch(() => pb.authStore.clear())
+      pb.collection('users').authRefresh()
+        .catch(() => pb.authStore.clear())
+        .finally(() => { if (active) setLoading(false) })
     } else {
       setLoading(false)
     }
