@@ -29,6 +29,8 @@ services:
       - "${APP_PORT:-80}:80"
     restart: unless-stopped
     labels:
+      # PocketBase filter syntax (quotes, ||) déclenche les règles SQLi de ModSecurity → désactivé
+      - "bunkerweb.USE_MODSECURITY=no"
       # Allow all HTTP methods needed by PocketBase (BunkerWeb blocks DELETE/PATCH/PUT by default)
       - "bunkerweb.ALLOWED_METHODS=GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS"
 
