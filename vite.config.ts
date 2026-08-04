@@ -34,20 +34,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24,
-              },
-              networkTimeoutSeconds: 10,
-            },
-          },
-        ],
+        // Ne jamais détourner le panel PocketBase (/_/) ni l'API (/api/) :
+        // ces chemins doivent toujours passer par le serveur, jamais par le
+        // service worker (sinon la navigation vers /_/ renvoie l'app à la
+        // place du panel admin).
+        navigateFallbackDenylist: [/^\/_\//, /^\/api\//],
       },
     }),
   ],
