@@ -35,10 +35,10 @@ export function LoginScreen() {
 
     setLoading(true)
     setError(null)
+    pb.authStore.clear()
 
     try {
       await pb.collection('users').authWithPassword(email.trim(), password)
-      // L'AuthContext se met à jour via pb.authStore.onChange
     } catch {
       setError('Email ou mot de passe incorrect.')
       setLoading(false)
@@ -57,7 +57,10 @@ export function LoginScreen() {
         </div>
 
         {/* Formulaire */}
-        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 flex flex-col gap-4">
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleLogin() }}
+          className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 flex flex-col gap-4"
+        >
           <Input
             label="Email"
             type="email"
@@ -77,7 +80,6 @@ export function LoginScreen() {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(null) }}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               placeholder="••••••••"
               autoComplete="current-password"
               error={error ?? undefined}
@@ -93,10 +95,10 @@ export function LoginScreen() {
             </button>
           </div>
 
-          <Button size="lg" fullWidth loading={loading} onClick={handleLogin}>
+          <Button type="submit" size="lg" fullWidth loading={loading}>
             Se connecter
           </Button>
-        </div>
+        </form>
 
         <p className="text-center text-zinc-500 text-sm">
           Pas encore de compte ?{' '}
