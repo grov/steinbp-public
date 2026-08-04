@@ -31,6 +31,9 @@ services:
     labels:
       - "bunkerweb.USE_MODSECURITY=no"
       - "bunkerweb.USE_BAD_BEHAVIOR=no"
+      - "bunkerweb.USE_LIMIT_REQ=no"
+      - "bunkerweb.USE_ANTIBOT=no"
+      - "bunkerweb.USE_DNSBL=no"
       - "bunkerweb.ALLOWED_METHODS=GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS"
 
 networks:
