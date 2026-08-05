@@ -183,7 +183,10 @@ export async function updateTableName(tableId: string, name: string): Promise<vo
 
 // ── Démarrage du tournoi ──────────────────────────────────────
 
-export async function startTournament(tournament: Tournament): Promise<void> {
+export async function startTournament(
+  tournament: Tournament,
+  options: { randomize?: boolean; teamOrder?: string[] } = {},
+): Promise<void> {
   const records = await pb.collection('teams').getFullList({
     filter: `tournament_id = "${tournament.id}" && is_bye = false`,
     requestKey: null,
@@ -191,7 +194,7 @@ export async function startTournament(tournament: Tournament): Promise<void> {
   const teams = records.map(recordToTeam)
 
   if (tournament.format === 'single_elimination') {
-    await generateSingleEliminationBracket(tournament, teams)
+    await generateSingleEliminationBracket(tournament, teams, options)
     await pb.collection('tournaments').update(tournament.id, { status: 'bracket_phase' })
   } else {
     await generateGroupPhase(tournament, teams)

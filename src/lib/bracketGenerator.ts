@@ -71,6 +71,7 @@ function recordToMatch(record: RecordModel): Match {
 export async function generateSingleEliminationBracket(
   tournament: Tournament,
   teams: Team[],
+  options: { randomize?: boolean; teamOrder?: string[] } = {},
 ): Promise<void> {
   const realTeams = teams.filter((t) => !t.is_bye)
   const n = realTeams.length
@@ -96,13 +97,22 @@ export async function generateSingleEliminationBracket(
     allTeams = [...allTeams, ...byeTeams.map(recordToTeam)]
   }
 
-  // ── 2. Trier par seed ────────────────────────────────────────
-  allTeams.sort((a, b) => {
-    if (a.seed === null && b.seed === null) return Math.random() - 0.5
-    if (a.seed === null) return 1
-    if (b.seed === null) return -1
-    return a.seed - b.seed
-  })
+  // ── 2. Ordonner les équipes ──────────────────────────────────
+  if (options.teamOrder && !options.randomize) {
+    const orderMap = new Map(options.teamOrder.map((id, i) => [id, i]))
+    allTeams.sort((a, b) => {
+      const ia = orderMap.get(a.id) ?? Infinity
+      const ib = orderMap.get(b.id) ?? Infinity
+      return ia - ib
+    })
+  } else {
+    allTeams.sort((a, b) => {
+      if (a.seed === null && b.seed === null) return Math.random() - 0.5
+      if (a.seed === null) return 1
+      if (b.seed === null) return -1
+      return a.seed - b.seed
+    })
+  }
 
   // ── 3. Placer dans les slots du bracket ─────────────────────
   const positions = bracketPositions(bracketSize)

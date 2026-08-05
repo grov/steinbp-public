@@ -20,8 +20,25 @@ export function RegisterTeamsScreen() {
   const [formError, setFormError] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [starting, setStarting] = useState(false)
+  const [randomize, setRandomize] = useState(true)
+  const [teamOrder, setTeamOrder] = useState<string[]>([])
 
   const realTeams = teams.filter((t) => !t.is_bye)
+
+  const orderedTeams = !randomize && teamOrder.length > 0
+    ? teamOrder
+        .map((id) => realTeams.find((t) => t.id === id))
+        .filter((t): t is typeof realTeams[number] => !!t)
+        .concat(realTeams.filter((t) => !teamOrder.includes(t.id)))
+    : realTeams
+
+  function moveTeam(index: number, direction: -1 | 1) {
+    const newIndex = index + direction
+    if (newIndex < 0 || newIndex >= orderedTeams.length) return
+    const newOrder = orderedTeams.map((t) => t.id)
+    ;[newOrder[index], newOrder[newIndex]] = [newOrder[newIndex], newOrder[index]]
+    setTeamOrder(newOrder)
+  }
 
   function validate() {
     if (!name.trim()) return 'Nom d\'équipe requis.'
@@ -68,7 +85,10 @@ export function RegisterTeamsScreen() {
     }
     setStarting(true)
     try {
-      await startTournament(tournament)
+      await startTournament(tournament, {
+        randomize,
+        teamOrder: orderedTeams.map((t) => t.id),
+      })
       navigate(`/tournament/${id}`)
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Erreur au démarrage.')
@@ -135,14 +155,28 @@ export function RegisterTeamsScreen() {
           </Button>
         </div>
 
+        {/* Options de rencontres */}
+        {realTeams.length >= 2 && (
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={randomize}
+              onChange={(e) => setRandomize(e.target.checked)}
+              className="w-5 h-5 rounded border-zinc-600 bg-zinc-900 text-brand accent-brand"
+            />
+            <span className="text-sm text-zinc-300">Rencontres aléatoires</span>
+          </label>
+        )}
+
         {/* Liste des équipes */}
         {realTeams.length > 0 && (
           <div>
             <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
               Équipes inscrites ({realTeams.length})
+              {!randomize && <span className="text-zinc-600 ml-2">— 1v2, 3v4, …</span>}
             </h2>
             <div className="flex flex-col gap-2">
-              {realTeams.map((team, i) => (
+              {orderedTeams.map((team, i) => (
                 <div
                   key={team.id}
                   className="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
@@ -154,6 +188,26 @@ export function RegisterTeamsScreen() {
                       {[team.player1_name, team.player2_name].filter(Boolean).join(' & ')}
                     </p>
                   </div>
+                  {!randomize && (
+                    <div className="flex flex-col mr-2">
+                      <button
+                        onClick={() => moveTeam(i, -1)}
+                        disabled={i === 0}
+                        className="text-zinc-500 hover:text-white disabled:text-zinc-800 text-sm px-1 transition-colors"
+                        aria-label="Monter"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        onClick={() => moveTeam(i, 1)}
+                        disabled={i === orderedTeams.length - 1}
+                        className="text-zinc-500 hover:text-white disabled:text-zinc-800 text-sm px-1 transition-colors"
+                        aria-label="Descendre"
+                      >
+                        ▼
+                      </button>
+                    </div>
+                  )}
                   <button
                     onClick={() => removeTeam(team.id)}
                     className="text-zinc-600 hover:text-red-400 p-2 rounded-lg transition-colors min-h-touch min-w-[2.5rem] flex items-center justify-center"
