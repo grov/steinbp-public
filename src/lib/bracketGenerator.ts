@@ -115,10 +115,16 @@ export async function generateSingleEliminationBracket(
   }
 
   // ── 3. Placer dans les slots du bracket ─────────────────────
-  const positions = bracketPositions(bracketSize)
   const slottedTeams: (Team | null)[] = new Array(bracketSize).fill(null)
-  for (let i = 0; i < allTeams.length; i++) {
-    slottedTeams[positions[i]] = allTeams[i]
+  if (options.teamOrder && !options.randomize) {
+    for (let i = 0; i < allTeams.length; i++) {
+      slottedTeams[i] = allTeams[i]
+    }
+  } else {
+    const positions = bracketPositions(bracketSize)
+    for (let i = 0; i < allTeams.length; i++) {
+      slottedTeams[positions[i]] = allTeams[i]
+    }
   }
 
   // ── 4. Insérer les matchs de tous les tours ─────────────────
