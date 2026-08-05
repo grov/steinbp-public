@@ -398,6 +398,12 @@ function HeroCard({
           </div>
           <div className="px-6 py-2.5 flex justify-between items-center border-t border-zinc-800/50">
             <Link
+              to="/my-tournaments"
+              className="text-xs text-brand/80 hover:text-brand transition-colors underline underline-offset-2"
+            >
+              🏓 Mes tournois
+            </Link>
+            <Link
               to="/challenges"
               className="text-xs text-brand/80 hover:text-brand transition-colors underline underline-offset-2"
             >
@@ -407,7 +413,7 @@ function HeroCard({
               to="/palmares"
               className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors underline underline-offset-2"
             >
-              Voir le palmarès
+              Palmarès
             </Link>
           </div>
         </>
@@ -572,10 +578,14 @@ function TournamentsSection({ playerTournaments }: { playerTournaments: PlayerTo
       <SectionTitle>Tournois ({playerTournaments.length})</SectionTitle>
       <div className="flex flex-col gap-2">
         {playerTournaments.map(({ tournament, teamName, won }) => (
-          <div
+          <Link
             key={tournament.id}
-            className={`rounded-xl px-4 py-3 border flex items-center justify-between gap-3
-              ${won ? 'bg-brand/10 border-brand/25' : 'bg-zinc-900 border-zinc-800'}`}
+            to={`/my-tournaments/${tournament.id}`}
+            className={`rounded-xl px-4 py-3 border flex items-center justify-between gap-3 transition-colors
+              ${won
+                ? 'bg-brand/10 border-brand/25 hover:bg-brand/15'
+                : 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800'
+              }`}
           >
             <div className="min-w-0">
               <p className="font-semibold text-white text-sm truncate">
@@ -584,15 +594,18 @@ function TournamentsSection({ playerTournaments }: { playerTournaments: PlayerTo
               </p>
               <p className="text-zinc-500 text-xs mt-0.5 truncate">{teamName}</p>
             </div>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0
-              ${tournament.status === 'finished'
-                ? 'bg-zinc-800 text-zinc-400'
-                : 'bg-blue-900/50 text-blue-300'
-              }`}
-            >
-              {STATUS_LABEL[tournament.status] ?? tournament.status}
-            </span>
-          </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
+                ${tournament.status === 'finished'
+                  ? 'bg-zinc-800 text-zinc-400'
+                  : 'bg-blue-900/50 text-blue-300'
+                }`}
+              >
+                {STATUS_LABEL[tournament.status] ?? tournament.status}
+              </span>
+              <span className="text-zinc-600 text-sm">›</span>
+            </div>
+          </Link>
         ))}
       </div>
     </section>

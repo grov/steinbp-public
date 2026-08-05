@@ -16,6 +16,8 @@ import { PublicDisplayScreen } from './screens/PublicDisplayScreen'
 import { PalmaresScreen } from './screens/PalmaresScreen'
 import { ChallengesScreen } from './screens/ChallengesScreen'
 import { NewChallengeScreen } from './screens/NewChallengeScreen'
+import { MyTournamentsScreen } from './screens/MyTournamentsScreen'
+import { TournamentViewScreen } from './screens/TournamentViewScreen'
 
 export function App() {
   return (
@@ -49,6 +51,14 @@ export function App() {
           <Route
             path="/challenges/new"
             element={<ProfileRoute><NewChallengeScreen /></ProfileRoute>}
+          />
+          <Route
+            path="/my-tournaments"
+            element={<ProfileRoute><MyTournamentsScreen /></ProfileRoute>}
+          />
+          <Route
+            path="/my-tournaments/:id"
+            element={<ProfileRoute><TournamentViewScreen /></ProfileRoute>}
           />
 
           {/* ── Admin + Organisateur ─────────────────────── */}
