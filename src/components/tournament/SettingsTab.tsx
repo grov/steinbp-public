@@ -391,24 +391,27 @@ function TeamsSection({
             ) : (
               <div key={team.id} className="flex items-center gap-1">
                 {!teamOrderState.randomize && !isStarted && (
-                  <div className="flex flex-col">
-                    <button
-                      onClick={() => moveTeam(i, -1)}
-                      disabled={i === 0}
-                      className="text-zinc-500 hover:text-white disabled:text-zinc-800 text-sm px-1 transition-colors"
-                      aria-label="Monter"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      onClick={() => moveTeam(i, 1)}
-                      disabled={i === displayTeams.length - 1}
-                      className="text-zinc-500 hover:text-white disabled:text-zinc-800 text-sm px-1 transition-colors"
-                      aria-label="Descendre"
-                    >
-                      ▼
-                    </button>
-                  </div>
+                  <>
+                    <span className="text-[10px] font-bold text-zinc-600 w-4 text-center tabular-nums">{i + 1}</span>
+                    <div className="flex flex-col">
+                      <button
+                        onClick={() => moveTeam(i, -1)}
+                        disabled={i === 0}
+                        className="text-zinc-500 hover:text-white disabled:text-zinc-800 text-sm px-1 transition-colors"
+                        aria-label="Monter"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        onClick={() => moveTeam(i, 1)}
+                        disabled={i === displayTeams.length - 1}
+                        className="text-zinc-500 hover:text-white disabled:text-zinc-800 text-sm px-1 transition-colors"
+                        aria-label="Descendre"
+                      >
+                        ▼
+                      </button>
+                    </div>
+                  </>
                 )}
                 <div className="flex-1">
                   <TeamRow
