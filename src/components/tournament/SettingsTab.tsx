@@ -89,6 +89,7 @@ export function SettingsTab({
         teams={realTeams}
         tournament={tournament}
         isStarted={isStarted}
+        isAdmin={isAdmin}
         onRefresh={onRefresh}
         teamOrderState={teamOrderState}
         onTeamOrderChange={setTeamOrderState}
@@ -265,6 +266,7 @@ function TeamsSection({
   teams: propTeams,
   tournament,
   isStarted,
+  isAdmin,
   onRefresh,
   teamOrderState,
   onTeamOrderChange,
@@ -272,6 +274,7 @@ function TeamsSection({
   teams: Team[]
   tournament: Tournament
   isStarted: boolean
+  isAdmin: boolean
   onRefresh: () => void
   teamOrderState: TeamOrderState
   onTeamOrderChange: (state: TeamOrderState) => void
@@ -279,6 +282,8 @@ function TeamsSection({
   const [teams, setTeams] = useState(propTeams)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [linkResult, setLinkResult] = useState<string | null>(null)
+  const [linking, setLinking] = useState(false)
   const [playerMap, setPlayerMap] = useState<Record<string, PlayerMini>>({})
 
   // Sync quand le parent reçoit des données fraîches
@@ -315,21 +320,83 @@ function TeamsSection({
     onRefresh()
   }
 
+  async function handleLinkPlayers() {
+    setLinking(true)
+    setLinkResult(null)
+    try {
+      const allPlayers = await pb.collection('users').getFullList({
+        fields: 'id,display_name',
+        requestKey: null,
+      })
+      const playersByName = new Map<string, string>()
+      for (const p of allPlayers) {
+        playersByName.set((p['display_name'] as string).toLowerCase(), p.id)
+      }
+
+      let linked = 0
+      const notFound: string[] = []
+
+      for (const team of teams) {
+        const updates: Record<string, string | null> = {}
+
+        if (!team.player1_id && team.player1_name) {
+          const id = playersByName.get(team.player1_name.toLowerCase())
+          if (id) { updates.player1_id = id; linked++ }
+          else notFound.push(team.player1_name)
+        }
+        if (!team.player2_id && team.player2_name) {
+          const id = playersByName.get(team.player2_name.toLowerCase())
+          if (id) { updates.player2_id = id; linked++ }
+          else notFound.push(team.player2_name)
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await pb.collection('teams').update(team.id, updates, { requestKey: null })
+        }
+      }
+
+      const unique = [...new Set(notFound)]
+      let msg = `${linked} joueur${linked > 1 ? 's' : ''} associé${linked > 1 ? 's' : ''}.`
+      if (unique.length > 0) msg += ` Non trouvés : ${unique.join(', ')}`
+      if (linked === 0 && unique.length === 0) msg = 'Tous les joueurs sont déjà associés.'
+      setLinkResult(msg)
+      onRefresh()
+    } catch {
+      setLinkResult('Erreur lors de l\'association.')
+    } finally {
+      setLinking(false)
+    }
+  }
+
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">
           Équipes ({teams.length})
         </h2>
-        {!isStarted && !showAddForm && (
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="text-brand text-sm font-semibold hover:text-brand-dark transition-colors"
-          >
-            + Ajouter
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {isAdmin && teams.some((t) => (!t.player1_id && t.player1_name) || (!t.player2_id && t.player2_name)) && (
+            <button
+              onClick={handleLinkPlayers}
+              disabled={linking}
+              className="text-zinc-400 text-xs font-semibold hover:text-white transition-colors disabled:text-zinc-600"
+            >
+              {linking ? '…' : '🔗 Associer joueurs'}
+            </button>
+          )}
+          {!isStarted && !showAddForm && (
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="text-brand text-sm font-semibold hover:text-brand-dark transition-colors"
+            >
+              + Ajouter
+            </button>
+          )}
+        </div>
       </div>
+      {linkResult && (
+        <p className="text-xs text-zinc-400 mb-2 bg-zinc-800 rounded-lg px-3 py-2">{linkResult}</p>
+      )}
 
       {isStarted && (
         <div className="mb-3 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-zinc-500 text-xs">
