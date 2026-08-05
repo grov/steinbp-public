@@ -5,6 +5,7 @@ import {
   closeTournament,
   removeTable,
   removeTeam,
+  resetTournament,
   startTournament,
   updateTableName,
   updateTeam,
@@ -24,9 +25,11 @@ interface SettingsTabProps {
   tables: GameTable[]
   isStarted: boolean
   isFinished: boolean
+  isAdmin: boolean
   onRefresh: () => void
   onStarted: () => void
   onFinished: () => void
+  onReset: () => void
 }
 
 export function SettingsTab({
@@ -35,9 +38,11 @@ export function SettingsTab({
   tables,
   isStarted,
   isFinished,
+  isAdmin,
   onRefresh,
   onStarted,
   onFinished,
+  onReset,
 }: SettingsTabProps) {
   const realTeams = teams.filter((t) => !t.is_bye)
 
@@ -64,6 +69,13 @@ export function SettingsTab({
           <p className="font-bold text-white">Tournoi clôturé</p>
           <p className="text-zinc-500 text-sm">Ce tournoi est terminé — aucune modification possible.</p>
         </div>
+      )}
+      {isAdmin && isStarted && (
+        <ResetTournamentButton
+          tournament={tournament}
+          onRefresh={onRefresh}
+          onReset={onReset}
+        />
       )}
       <TeamsSection teams={realTeams} tournament={tournament} isStarted={isStarted} onRefresh={onRefresh} />
       <TablesSection tables={tables} tournament={tournament} isStarted={isStarted} onRefresh={onRefresh} />
@@ -161,6 +173,58 @@ function CloseTournamentButton({
       ) : (
         <Button variant="secondary" size="lg" fullWidth onClick={() => setConfirm(true)}>
           🏁 Clôturer le tournoi
+        </Button>
+      )}
+    </div>
+  )
+}
+
+// ── Bouton de réinitialisation (admin) ────────────────────────
+
+function ResetTournamentButton({
+  tournament,
+  onRefresh,
+  onReset,
+}: {
+  tournament: Tournament
+  onRefresh: () => void
+  onReset: () => void
+}) {
+  const [confirm, setConfirm] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  async function handleReset() {
+    setLoading(true)
+    try {
+      await resetTournament(tournament.id)
+      onReset()
+      onRefresh()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="bg-zinc-900 border border-yellow-500/30 rounded-2xl p-4 flex flex-col gap-3">
+      <div>
+        <h2 className="font-bold text-yellow-400">Revenir à l'inscription</h2>
+        <p className="text-zinc-500 text-sm mt-0.5">
+          Supprime tous les matchs générés et remet le tournoi en phase d'inscription.
+          Les équipes sont conservées.
+        </p>
+      </div>
+      {confirm ? (
+        <div className="flex gap-2">
+          <Button variant="ghost" size="lg" onClick={() => setConfirm(false)}>
+            Annuler
+          </Button>
+          <Button size="lg" fullWidth loading={loading} onClick={handleReset}>
+            Confirmer la réinitialisation
+          </Button>
+        </div>
+      ) : (
+        <Button variant="secondary" size="lg" fullWidth onClick={() => setConfirm(true)}>
+          ⏪ Revenir à l'inscription
         </Button>
       )}
     </div>

@@ -140,6 +140,34 @@ export async function closeTournament(tournamentId: string): Promise<void> {
   await pb.collection('tournaments').update(tournamentId, { status: 'finished' })
 }
 
+export async function resetTournament(tournamentId: string): Promise<void> {
+  const matches = await pb.collection('matches').getFullList({
+    filter: `tournament_id = "${tournamentId}"`,
+    requestKey: null,
+  })
+  await Promise.all(matches.map((m) => pb.collection('matches').delete(m.id)))
+
+  const byeTeams = await pb.collection('teams').getFullList({
+    filter: `tournament_id = "${tournamentId}" && is_bye = true`,
+    requestKey: null,
+  })
+  await Promise.all(byeTeams.map((t) => pb.collection('teams').delete(t.id)))
+
+  const standings = await pb.collection('group_standings').getFullList({
+    filter: `tournament_id = "${tournamentId}"`,
+    requestKey: null,
+  })
+  await Promise.all(standings.map((s) => pb.collection('group_standings').delete(s.id)))
+
+  const groups = await pb.collection('groups').getFullList({
+    filter: `tournament_id = "${tournamentId}"`,
+    requestKey: null,
+  })
+  await Promise.all(groups.map((g) => pb.collection('groups').delete(g.id)))
+
+  await pb.collection('tournaments').update(tournamentId, { status: 'registration' })
+}
+
 export async function addTeam(payload: CreateTeamPayload): Promise<Team> {
   const record = await pb.collection('teams').create(payload)
   return recordToTeam(record)

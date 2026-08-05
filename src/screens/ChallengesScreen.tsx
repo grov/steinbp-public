@@ -48,7 +48,7 @@ export function ChallengesScreen() {
     <div className="min-h-screen bg-zinc-950 text-white flex flex-col">
       <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-4 sticky top-0 z-10">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <Link to="/profile" className="text-zinc-400 hover:text-white transition-colors text-sm">
+          <Link to="/admin" className="text-zinc-400 hover:text-white transition-colors text-sm">
             ← Retour
           </Link>
           <h1 className="text-xl font-black text-brand flex items-center gap-2">⚔️ Défis</h1>

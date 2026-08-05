@@ -9,6 +9,7 @@ import { GroupStandings } from '../components/tournament/GroupStandings'
 import { SettingsTab } from '../components/tournament/SettingsTab'
 import { StatsTab } from '../components/tournament/StatsTab'
 import { TournamentStatusBadge } from '../components/ui/Badge'
+import { useAuth } from '../context/AuthContext'
 import type { MatchWithRelations, TrickEvent } from '../types/database'
 
 type Tab = 'queue' | 'bracket' | 'standings' | 'stats' | 'config'
@@ -17,6 +18,7 @@ export function TournamentDashboard() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { tournament, teams, tables, matches, groups, loading, silentReload } = useTournament(id)
+  const { isAdmin } = useAuth()
 
   const [activeTab, setActiveTab] = useState<Tab>('queue')
   const [scoreMatch, setScoreMatch] = useState<MatchWithRelations | null>(null)
@@ -179,9 +181,11 @@ export function TournamentDashboard() {
               tables={tables}
               isStarted={isStarted}
               isFinished={isFinished}
+              isAdmin={isAdmin}
               onRefresh={silentReload}
               onStarted={() => setLocallyStarted(true)}
               onFinished={() => setLocallyFinished(true)}
+              onReset={() => { setLocallyStarted(false); setLocallyFinished(false) }}
             />
           )}
         </div>
