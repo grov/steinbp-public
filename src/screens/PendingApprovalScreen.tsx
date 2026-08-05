@@ -14,7 +14,7 @@ export function PendingApprovalScreen() {
     return <Navigate to={isManager ? '/admin' : '/profile'} replace />
   }
 
-  // Session valide mais player null = échec du fetch (Supabase endormi)
+  // Session valide mais player null = échec du fetch (PocketBase indisponible)
   if (!loading && session && !player) {
     async function retry() {
       setRetrying(true)
