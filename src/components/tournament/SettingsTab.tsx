@@ -32,6 +32,11 @@ interface SettingsTabProps {
   onReset: () => void
 }
 
+interface TeamOrderState {
+  randomize: boolean
+  order: string[]
+}
+
 export function SettingsTab({
   tournament,
   teams,
@@ -45,6 +50,7 @@ export function SettingsTab({
   onReset,
 }: SettingsTabProps) {
   const realTeams = teams.filter((t) => !t.is_bye)
+  const [teamOrderState, setTeamOrderState] = useState<TeamOrderState>({ randomize: true, order: [] })
 
   return (
     <div className="flex flex-col gap-8">
@@ -52,6 +58,8 @@ export function SettingsTab({
         <StartTournamentButton
           tournament={tournament}
           teamCount={realTeams.length}
+          teamOrderState={teamOrderState}
+          teams={realTeams}
           onRefresh={onRefresh}
           onStarted={onStarted}
         />
@@ -77,7 +85,14 @@ export function SettingsTab({
           onReset={onReset}
         />
       )}
-      <TeamsSection teams={realTeams} tournament={tournament} isStarted={isStarted} onRefresh={onRefresh} />
+      <TeamsSection
+        teams={realTeams}
+        tournament={tournament}
+        isStarted={isStarted}
+        onRefresh={onRefresh}
+        teamOrderState={teamOrderState}
+        onTeamOrderChange={setTeamOrderState}
+      />
       <TablesSection tables={tables} tournament={tournament} isStarted={isStarted} onRefresh={onRefresh} />
     </div>
   )
@@ -85,7 +100,14 @@ export function SettingsTab({
 
 // ── Bouton de démarrage ───────────────────────────────────────
 
-function StartTournamentButton({ tournament, teamCount, onRefresh, onStarted }: { tournament: Tournament; teamCount: number; onRefresh: () => void; onStarted: () => void }) {
+function StartTournamentButton({ tournament, teamCount, teamOrderState, teams, onRefresh, onStarted }: {
+  tournament: Tournament
+  teamCount: number
+  teamOrderState: TeamOrderState
+  teams: Team[]
+  onRefresh: () => void
+  onStarted: () => void
+}) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const canStart = teamCount >= 2
@@ -94,7 +116,13 @@ function StartTournamentButton({ tournament, teamCount, onRefresh, onStarted }: 
     setLoading(true)
     setError(null)
     try {
-      await startTournament(tournament)
+      const orderedIds = teamOrderState.order.length > 0
+        ? teamOrderState.order
+        : teams.map((t) => t.id)
+      await startTournament(tournament, {
+        randomize: teamOrderState.randomize,
+        teamOrder: orderedIds,
+      })
       onStarted()
       onRefresh()
     } catch (e) {
@@ -238,11 +266,15 @@ function TeamsSection({
   tournament,
   isStarted,
   onRefresh,
+  teamOrderState,
+  onTeamOrderChange,
 }: {
   teams: Team[]
   tournament: Tournament
   isStarted: boolean
   onRefresh: () => void
+  teamOrderState: TeamOrderState
+  onTeamOrderChange: (state: TeamOrderState) => void
 }) {
   const [teams, setTeams] = useState(propTeams)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -305,6 +337,21 @@ function TeamsSection({
         </div>
       )}
 
+      {!isStarted && teams.length >= 2 && (
+        <label className="flex items-center gap-3 cursor-pointer mb-2">
+          <input
+            type="checkbox"
+            checked={teamOrderState.randomize}
+            onChange={(e) => onTeamOrderChange({ ...teamOrderState, randomize: e.target.checked })}
+            className="w-5 h-5 rounded border-zinc-600 bg-zinc-900 text-brand accent-brand"
+          />
+          <span className="text-sm text-zinc-300">
+            Rencontres aléatoires
+            {!teamOrderState.randomize && <span className="text-zinc-600 ml-2">— 1v2, 3v4, …</span>}
+          </span>
+        </label>
+      )}
+
       <div className="flex flex-col gap-2">
         {/* Formulaire d'ajout */}
         {showAddForm && (
@@ -317,24 +364,64 @@ function TeamsSection({
         )}
 
         {/* Liste des équipes */}
-        {teams.map((team) =>
-          editingId === team.id ? (
-            <EditTeamForm
-              key={team.id}
-              team={team}
-              existingNames={teams.filter((t) => t.id !== team.id).map((t) => t.name)}
-              onDone={() => setEditingId(null)}
-            />
-          ) : (
-            <TeamRow
-              key={team.id}
-              team={team}
-              playerMap={playerMap}
-              onEdit={() => setEditingId(team.id)}
-              onDelete={() => handleDelete(team.id)}
-            />
-          ),
-        )}
+        {(() => {
+          const displayTeams = !teamOrderState.randomize && teamOrderState.order.length > 0
+            ? teamOrderState.order
+                .map((id) => teams.find((t) => t.id === id))
+                .filter((t): t is Team => !!t)
+                .concat(teams.filter((t) => !teamOrderState.order.includes(t.id)))
+            : teams
+
+          function moveTeam(index: number, direction: -1 | 1) {
+            const newIndex = index + direction
+            if (newIndex < 0 || newIndex >= displayTeams.length) return
+            const newOrder = displayTeams.map((t) => t.id)
+            ;[newOrder[index], newOrder[newIndex]] = [newOrder[newIndex], newOrder[index]]
+            onTeamOrderChange({ ...teamOrderState, order: newOrder })
+          }
+
+          return displayTeams.map((team, i) =>
+            editingId === team.id ? (
+              <EditTeamForm
+                key={team.id}
+                team={team}
+                existingNames={teams.filter((t) => t.id !== team.id).map((t) => t.name)}
+                onDone={() => setEditingId(null)}
+              />
+            ) : (
+              <div key={team.id} className="flex items-center gap-1">
+                {!teamOrderState.randomize && !isStarted && (
+                  <div className="flex flex-col">
+                    <button
+                      onClick={() => moveTeam(i, -1)}
+                      disabled={i === 0}
+                      className="text-zinc-500 hover:text-white disabled:text-zinc-800 text-sm px-1 transition-colors"
+                      aria-label="Monter"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      onClick={() => moveTeam(i, 1)}
+                      disabled={i === displayTeams.length - 1}
+                      className="text-zinc-500 hover:text-white disabled:text-zinc-800 text-sm px-1 transition-colors"
+                      aria-label="Descendre"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <TeamRow
+                    team={team}
+                    playerMap={playerMap}
+                    onEdit={() => setEditingId(team.id)}
+                    onDelete={() => handleDelete(team.id)}
+                  />
+                </div>
+              </div>
+            ),
+          )
+        })()}
 
         {teams.length === 0 && !showAddForm && (
           <p className="text-center text-zinc-600 py-6 text-sm">Aucune équipe inscrite.</p>
