@@ -192,18 +192,42 @@ export async function generateSingleEliminationBracket(
       await resolveBye({ ...match, next_match_id: nextMatchId, next_match_slot: nextMatchSlot })
     }
   }
+
+  // ── 7. Résoudre les byes en cascade (tours suivants) ───────
+  for (let r = 1; r < insertedRounds.length; r++) {
+    for (const match of insertedRounds[r]) {
+      const fresh = await pb.collection('matches').getOne(match.id, { requestKey: null })
+      const t1 = fresh['team1_id'] as string | null
+      const t2 = fresh['team2_id'] as string | null
+      if (!t1 && !t2) continue
+      if (t1 && t2) continue
+      const soloTeamId = t1 || t2
+      if (!soloTeamId) continue
+      const nextRound = insertedRounds[r + 1]
+      if (!nextRound) continue
+      const matchIndex = insertedRounds[r].indexOf(match)
+      const nextMatchId = nextRound[Math.floor(matchIndex / 2)].id
+      const nextSlot = ((matchIndex % 2) + 1) as 1 | 2
+      await pb.collection('matches').update(match.id, { winner_id: soloTeamId, status: 'bye' })
+      await placeWinnerInNextMatch(soloTeamId, nextMatchId, nextSlot)
+    }
+  }
 }
 
 async function resolveBye(match: Match): Promise<void> {
-  let winnerId: string | null = null
+  const team1IsBye = match.team1_id
+    ? (await pb.collection('teams').getOne(match.team1_id, { fields: 'id,is_bye', requestKey: null }))['is_bye'] as boolean
+    : true
+  const team2IsBye = match.team2_id
+    ? (await pb.collection('teams').getOne(match.team2_id, { fields: 'id,is_bye', requestKey: null }))['is_bye'] as boolean
+    : true
 
-  if (match.team1_id) {
-    const record = await pb.collection('teams').getOne(match.team1_id, { fields: 'id,is_bye', requestKey: null })
-    winnerId = record['is_bye'] ? match.team2_id : match.team1_id
-  } else {
-    winnerId = match.team2_id
+  if (team1IsBye && team2IsBye) {
+    await pb.collection('matches').update(match.id, { status: 'bye', winner_id: null })
+    return
   }
 
+  const winnerId = team1IsBye ? match.team2_id : match.team1_id
   if (!winnerId || !match.next_match_id) return
 
   await pb.collection('matches').update(match.id, { winner_id: winnerId, status: 'bye' })
