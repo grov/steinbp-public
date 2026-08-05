@@ -252,4 +252,22 @@ export async function placeWinnerInNextMatch(
   if (otherTeamId) update.status = 'ready'
 
   await pb.collection('matches').update(nextMatchId, update)
+
+  if (!otherTeamId) {
+    const otherSlot = slot === 1 ? 2 : 1
+    const sourceMatches = await pb.collection('matches').getFullList({
+      filter: `next_match_id = "${nextMatchId}" && next_match_slot = ${otherSlot}`,
+      requestKey: null,
+    })
+    const source = sourceMatches[0]
+    if (source && source['status'] === 'bye' && !source['winner_id']) {
+      await pb.collection('matches').update(nextMatchId, { winner_id: winnerId, status: 'bye' })
+      const updatedMatch = await pb.collection('matches').getOne(nextMatchId, { requestKey: null })
+      const nextNext = (updatedMatch['next_match_id'] as string) || null
+      const nextSlot = (updatedMatch['next_match_slot'] as number) as 1 | 2 | null
+      if (nextNext && nextSlot) {
+        await placeWinnerInNextMatch(winnerId, nextNext, nextSlot)
+      }
+    }
+  }
 }
