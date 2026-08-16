@@ -39,6 +39,7 @@ export function PlayersPanel({ onPendingCount }: { onPendingCount?: (count: numb
   const [editingId, setEditingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState<PlayerRole | ''>('')
   const [page, setPage] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -58,7 +59,7 @@ export function PlayersPanel({ onPendingCount }: { onPendingCount?: (count: numb
     setLoading(true)
 
     Promise.all([
-      fetchPlayersPage(page, debouncedSearch),
+      fetchPlayersPage(page, debouncedSearch, roleFilter),
       fetchPendingPlayerCount(),
     ])
       .then(([playersPage, pending]) => {
@@ -77,7 +78,7 @@ export function PlayersPanel({ onPendingCount }: { onPendingCount?: (count: numb
       .finally(() => { if (active) setLoading(false) })
 
     return () => { active = false }
-  }, [page, debouncedSearch, reloadKey, onPendingCount])
+  }, [page, debouncedSearch, roleFilter, reloadKey, onPendingCount])
 
   function reloadPlayers() {
     setReloadKey((key) => key + 1)
@@ -104,17 +105,34 @@ export function PlayersPanel({ onPendingCount }: { onPendingCount?: (count: numb
         )}
       </h2>
 
-      <div className="relative mb-4">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" aria-hidden="true">🔎</span>
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Rechercher par nom ou pseudo…"
-          aria-label="Rechercher un joueur"
-          className="w-full rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm pl-10 pr-4 py-3
-                     placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-        />
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" aria-hidden="true">🔎</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Rechercher par nom ou pseudo…"
+            aria-label="Rechercher un joueur"
+            className="w-full rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm pl-10 pr-4 py-3
+                       placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+          />
+        </div>
+        <select
+          value={roleFilter}
+          onChange={(event) => {
+            setRoleFilter(event.target.value as PlayerRole | '')
+            setPage(1)
+          }}
+          aria-label="Filtrer les joueurs par rôle"
+          className="rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm px-4 py-3
+                     focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent sm:w-48"
+        >
+          <option value="">Tous les rôles</option>
+          <option value="joueur">Joueurs</option>
+          <option value="organisateur">Organisateurs</option>
+          <option value="admin">Admins</option>
+        </select>
       </div>
 
       {loading ? (
@@ -122,7 +140,11 @@ export function PlayersPanel({ onPendingCount }: { onPendingCount?: (count: numb
       ) : players.length === 0 ? (
         <div className="text-center py-12 text-zinc-600">
           <p className="text-3xl mb-2">👥</p>
-          <p>{debouncedSearch ? 'Aucun joueur ne correspond à cette recherche.' : 'Aucun joueur inscrit.'}</p>
+          <p>
+            {debouncedSearch || roleFilter
+              ? 'Aucun joueur ne correspond à ces filtres.'
+              : 'Aucun joueur inscrit.'}
+          </p>
         </div>
       ) : (
         <>

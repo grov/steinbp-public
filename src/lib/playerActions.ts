@@ -218,11 +218,24 @@ export interface PlayersPage {
   totalPages: number
 }
 
-export async function fetchPlayersPage(page: number, search = ''): Promise<PlayersPage> {
+export async function fetchPlayersPage(
+  page: number,
+  search = '',
+  role: Player['role'] | '' = '',
+): Promise<PlayersPage> {
   const normalizedSearch = search.trim()
-  const filter = normalizedSearch
-    ? pb.filter('display_name ~ {:search} || username ~ {:search}', { search: normalizedSearch })
-    : ''
+  let filter = ''
+
+  if (normalizedSearch && role) {
+    filter = pb.filter(
+      '(display_name ~ {:search} || username ~ {:search}) && role = {:role}',
+      { search: normalizedSearch, role },
+    )
+  } else if (normalizedSearch) {
+    filter = pb.filter('display_name ~ {:search} || username ~ {:search}', { search: normalizedSearch })
+  } else if (role) {
+    filter = pb.filter('role = {:role}', { role })
+  }
 
   const result = await pb.collection('users').getList(page, 10, {
     filter,
