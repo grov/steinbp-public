@@ -211,14 +211,40 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
 
 // ── Admin : gestion des inscriptions ─────────────────────────
 
-export async function fetchAllPlayers(): Promise<Player[]> {
-  const records = await pb.collection('users').getFullList({
-    sort: '-id',
+export interface PlayersPage {
+  items: Player[]
+  page: number
+  totalItems: number
+  totalPages: number
+}
+
+export async function fetchPlayersPage(page: number, search = ''): Promise<PlayersPage> {
+  const normalizedSearch = search.trim()
+  const filter = normalizedSearch
+    ? pb.filter('display_name ~ {:search} || username ~ {:search}', { search: normalizedSearch })
+    : ''
+
+  const result = await pb.collection('users').getList(page, 10, {
+    filter,
+    sort: '-created',
     requestKey: null,
   })
-  const players = records.map(recordToPlayer)
-  const order: Record<string, number> = { pending: 0, approved: 1, rejected: 2 }
-  return players.sort((a, b) => order[a.status] - order[b.status])
+
+  return {
+    items: result.items.map(recordToPlayer),
+    page: result.page,
+    totalItems: result.totalItems,
+    totalPages: result.totalPages,
+  }
+}
+
+export async function fetchPendingPlayerCount(): Promise<number> {
+  const result = await pb.collection('users').getList(1, 1, {
+    filter: 'status = "pending"',
+    fields: 'id',
+    requestKey: null,
+  })
+  return result.totalItems
 }
 
 export async function deletePlayer(playerId: string): Promise<void> {

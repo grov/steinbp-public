@@ -3,7 +3,8 @@ import {
   adminUpdatePlayer,
   approvePlayer,
   deletePlayer,
-  fetchAllPlayers,
+  fetchPendingPlayerCount,
+  fetchPlayersPage,
   rejectPlayer,
 } from '../../lib/playerActions'
 import type { Player, PlayerRole, PlayerStatus } from '../../types/database'
@@ -32,97 +33,145 @@ const STATUS_LABEL: Record<PlayerStatus, string> = {
   rejected: 'Refusé',
 }
 
-const STATUS_ORDER: Record<PlayerStatus, number> = {
-  pending:  0,
-  approved: 1,
-  rejected: 2,
-}
-
-function sortPlayers(list: Player[]): Player[] {
-  return [...list].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
-}
-
 export function PlayersPanel({ onPendingCount }: { onPendingCount?: (count: number) => void }) {
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [pendingCount, setPendingCount] = useState(0)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
-    fetchAllPlayers()
-      .then((data) => {
-        setPlayers(data)
-        onPendingCount?.(data.filter((p) => p.status === 'pending').length)
+    const timer = window.setTimeout(() => {
+      setPage(1)
+      setDebouncedSearch(search.trim())
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [search])
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+
+    Promise.all([
+      fetchPlayersPage(page, debouncedSearch),
+      fetchPendingPlayerCount(),
+    ])
+      .then(([playersPage, pending]) => {
+        if (!active) return
+        if (playersPage.totalPages > 0 && page > playersPage.totalPages) {
+          setPage(playersPage.totalPages)
+          return
+        }
+        setPlayers(playersPage.items)
+        setTotalItems(playersPage.totalItems)
+        setTotalPages(playersPage.totalPages)
+        setPendingCount(pending)
+        onPendingCount?.(pending)
       })
       .catch((e: unknown) => { if (!(e as { isAbort?: boolean })?.isAbort) console.error(e) })
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => { if (active) setLoading(false) })
 
-  function applyUpdate(updated: Player) {
-    setPlayers((prev) => {
-      const next = sortPlayers(prev.map((p) => (p.id === updated.id ? updated : p)))
-      onPendingCount?.(next.filter((p) => p.status === 'pending').length)
-      return next
-    })
+    return () => { active = false }
+  }, [page, debouncedSearch, reloadKey, onPendingCount])
+
+  function reloadPlayers() {
+    setReloadKey((key) => key + 1)
   }
 
-  function handleDeleted(id: string) {
-    setPlayers((prev) => {
-      const next = prev.filter((p) => p.id !== id)
-      onPendingCount?.(next.filter((p) => p.status === 'pending').length)
-      return next
-    })
+  function handleDeleted() {
+    if (players.length === 1 && page > 1) setPage((current) => current - 1)
+    else reloadPlayers()
   }
 
-  function handleUpdated(updated: Player) {
-    applyUpdate(updated)
+  function handleUpdated() {
     setEditingId(null)
+    reloadPlayers()
   }
-
-  if (loading) {
-    return <p className="text-zinc-600 text-sm text-center py-8">Chargement…</p>
-  }
-
-  if (players.length === 0) {
-    return (
-      <div className="text-center py-12 text-zinc-600">
-        <p className="text-3xl mb-2">👥</p>
-        <p>Aucun joueur inscrit.</p>
-      </div>
-    )
-  }
-
-  const pendingCount = players.filter((p) => p.status === 'pending').length
 
   return (
     <section>
       <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
-        Joueurs ({players.length})
+        Joueurs ({totalItems})
         {pendingCount > 0 && (
           <span className="ml-2 bg-yellow-500/20 text-yellow-400 text-xs font-bold px-1.5 py-0.5 rounded-full">
             {pendingCount} en attente
           </span>
         )}
       </h2>
-      <div className="flex flex-col gap-2">
-        {players.map((player) =>
-          editingId === player.id ? (
-            <PlayerEditForm
-              key={player.id}
-              player={player}
-              onSaved={handleUpdated}
-              onCancel={() => setEditingId(null)}
-            />
-          ) : (
-            <PlayerRow
-              key={player.id}
-              player={player}
-              onEdit={() => setEditingId(player.id)}
-              onDeleted={() => handleDeleted(player.id)}
-              onStatusChanged={applyUpdate}
-            />
-          ),
-        )}
+
+      <div className="relative mb-4">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" aria-hidden="true">🔎</span>
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Rechercher par nom ou pseudo…"
+          aria-label="Rechercher un joueur"
+          className="w-full rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm pl-10 pr-4 py-3
+                     placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+        />
       </div>
+
+      {loading ? (
+        <p className="text-zinc-600 text-sm text-center py-8">Chargement…</p>
+      ) : players.length === 0 ? (
+        <div className="text-center py-12 text-zinc-600">
+          <p className="text-3xl mb-2">👥</p>
+          <p>{debouncedSearch ? 'Aucun joueur ne correspond à cette recherche.' : 'Aucun joueur inscrit.'}</p>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col gap-2">
+            {players.map((player) =>
+              editingId === player.id ? (
+                <PlayerEditForm
+                  key={player.id}
+                  player={player}
+                  onSaved={handleUpdated}
+                  onCancel={() => setEditingId(null)}
+                />
+              ) : (
+                <PlayerRow
+                  key={player.id}
+                  player={player}
+                  onEdit={() => setEditingId(player.id)}
+                  onDeleted={handleDeleted}
+                  onStatusChanged={reloadPlayers}
+                />
+              ),
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <nav className="mt-5 flex items-center justify-between gap-3" aria-label="Pagination des joueurs">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={page === 1}
+                className="min-h-touch rounded-xl border border-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-300
+                           hover:border-zinc-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                ← Précédent
+              </button>
+              <span className="text-xs font-semibold text-zinc-500">Page {page} sur {totalPages}</span>
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                disabled={page === totalPages}
+                className="min-h-touch rounded-xl border border-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-300
+                           hover:border-zinc-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                Suivant →
+              </button>
+            </nav>
+          )}
+        </>
+      )}
     </section>
   )
 }
@@ -138,7 +187,7 @@ function PlayerRow({
   player: Player
   onEdit: () => void
   onDeleted: () => void
-  onStatusChanged: (updated: Player) => void
+  onStatusChanged: () => void
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -148,7 +197,7 @@ function PlayerRow({
     setActioning(true)
     try {
       await approvePlayer(player.id)
-      onStatusChanged({ ...player, status: 'approved' })
+      onStatusChanged()
     } finally {
       setActioning(false)
     }
@@ -158,7 +207,7 @@ function PlayerRow({
     setActioning(true)
     try {
       await rejectPlayer(player.id)
-      onStatusChanged({ ...player, status: 'rejected' })
+      onStatusChanged()
     } finally {
       setActioning(false)
     }
@@ -269,7 +318,7 @@ function PlayerEditForm({
   onCancel,
 }: {
   player: Player
-  onSaved: (updated: Player) => void
+  onSaved: () => void
   onCancel: () => void
 }) {
   const [displayName, setDisplayName] = useState(player.display_name)
@@ -285,13 +334,13 @@ function PlayerEditForm({
     setSaving(true)
     setError(null)
     try {
-      const updated = await adminUpdatePlayer(player.id, {
+      await adminUpdatePlayer(player.id, {
         display_name: displayName.trim(),
         username: username.trim(),
         status,
         role,
       })
-      onSaved(updated)
+      onSaved()
     } catch (e) {
       setError((e as { message?: string })?.message ?? 'Erreur lors de la sauvegarde.')
     } finally {
