@@ -8,7 +8,6 @@ dist/
 .env
 .env.*
 !.env.example
-!.env.traefik.example
 
 # Logs
 *.log

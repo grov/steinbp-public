@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-3.0-orange?style=flat-square" alt="v3.0" />
   <img src="https://img.shields.io/badge/stack-React%20%2B%20PocketBase-blue?style=flat-square" />
-  <img src="https://img.shields.io/badge/deploy-Docker%20%2B%20Traefik-informational?style=flat-square" />
+  <img src="https://img.shields.io/badge/deploy-Docker%20%2B%20Nginx-informational?style=flat-square" />
   <img src="https://img.shields.io/badge/PWA-installable-green?style=flat-square" />
   <img src="https://img.shields.io/badge/Android-APK-brightgreen?style=flat-square" />
 </p>
@@ -92,7 +92,7 @@ Le profil joueur a été entièrement redesigné dans un style RPG : avatar hexa
 |------|-------|
 | **Admin** | Tout : joueurs, tournois, palmarès, défis, profil, **onglet Custom** |
 | **Organisateur** | Ses propres tournois, palmarès, défis, profil |
-| **Joueur** | Son profil, palmarès, défis |
+| **Joueur** | Son profil, ses tournois et leurs brackets, palmarès, défis |
 
 ---
 
@@ -332,7 +332,7 @@ Les mises à jour de PocketBase corrigent régulièrement des failles de sécuri
 | Conteneurisation | Docker + Nginx |
 | PWA | vite-plugin-pwa (Workbox) |
 | App Android | Capacitor (APK via GitHub Actions) |
-| Reverse proxy | Traefik (optionnel, production) |
+| Reverse proxy | Externe et optionnel |
 
 ---
 
@@ -370,7 +370,7 @@ Une fois connecté en tant qu'admin, tous les utilisateurs peuvent être approuv
 
 ## Déploiement
 
-### Sans Traefik — test local
+### Docker — test local ou déploiement derrière un reverse proxy
 
 1. Copier le fichier d'environnement et l'éditer :
    ```bash
@@ -388,28 +388,10 @@ Une fois connecté en tant qu'admin, tous les utilisateurs peuvent être approuv
 
 L'application est accessible sur `http://localhost` (ou le port configuré).
 
----
-
-### Avec Traefik — déploiement production
-
-Prérequis : un réseau Docker externe `traefik` et une instance Traefik en fonctionnement.
-
-1. Copier le fichier d'environnement et l'éditer :
-   ```bash
-   cp .env.traefik.example .env
-   ```
-   | Variable | Description |
-   |----------|-------------|
-   | `APP_NAME` | Nom utilisé pour les routeurs/middlewares Traefik (ex : `steinbp`) |
-   | `APP_DOMAIN` | Domaine public de l'application (ex : `steinbp.example.com`) |
-   | `VITE_POCKETBASE_URL` | URL publique de l'app avec `https://` (ex : `https://steinbp.example.com`) |
-   | `TRAEFIK_CERT_RESOLVER` | Nom du cert resolver Traefik (ex : `letsencrypt`) |
-   | `TRAEFIK_SECURED_MIDDLEWARES` | Middlewares du routeur HTTPS — doit toujours inclure `<APP_NAME>-headers@docker` |
-
-2. Lancer :
-   ```bash
-   docker compose -f docker-compose.traefik.yml up -d
-   ```
+En production, le reverse proxy et sa politique de sécurité restent propres à
+l'environnement d'hébergement. Il doit transmettre le trafic vers le service
+`steinbp` et laisser `/api/` accessible à l'application. L'interface
+d'administration PocketBase `/_/` doit être bloquée sur l'accès public.
 
 ---
 
