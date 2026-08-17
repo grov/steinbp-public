@@ -8,6 +8,8 @@ interface MatchCardProps {
   onEnterScore: (match: MatchWithRelations) => void
   onUnassign?: (match: MatchWithRelations) => void
   onEditScore?: (match: MatchWithRelations) => void
+  cupsPerSide: number
+  cupsToWin: number
   compact?: boolean
 }
 
@@ -22,12 +24,15 @@ export function MatchCard({
   onEnterScore,
   onUnassign,
   onEditScore,
+  cupsPerSide,
+  cupsToWin,
   compact = false,
 }: MatchCardProps) {
   const { team1, team2, table, status, winner } = match
   const isFinished = status === 'finished' || status === 'bye'
   const isInProgress = status === 'in_progress'
   const isReady = status === 'ready'
+  const loserCupsRemaining = Math.max(0, cupsPerSide - cupsToWin)
 
   const borderColor = isInProgress
     ? 'border-green-500/50'
@@ -75,11 +80,11 @@ export function MatchCard({
         {isFinished && winner && match.winner_cups_remaining !== null ? (
           <div className="flex-shrink-0 flex flex-col items-center gap-0 min-w-[36px]">
             <span className={`font-black text-xl tabular-nums leading-tight ${winner.id === team1?.id ? 'text-green-400' : 'text-zinc-600'}`}>
-              {winner.id === team1?.id ? match.winner_cups_remaining : 0}
+              {winner.id === team1?.id ? match.winner_cups_remaining : loserCupsRemaining}
             </span>
             <span className="text-zinc-700 text-[10px] leading-none">🥤</span>
             <span className={`font-black text-xl tabular-nums leading-tight ${winner.id === team2?.id ? 'text-green-400' : 'text-zinc-600'}`}>
-              {winner.id === team2?.id ? match.winner_cups_remaining : 0}
+              {winner.id === team2?.id ? match.winner_cups_remaining : loserCupsRemaining}
             </span>
           </div>
         ) : (

@@ -15,6 +15,7 @@ export interface Tournament {
   status: TournamentStatus
   num_tables: number
   cups_per_side: number
+  cups_to_win: number
   groups_count: number | null
   teams_advance_per_group: number | null
   created_by: string | null
@@ -203,6 +204,7 @@ export interface CreateTournamentPayload {
   format: TournamentFormat
   num_tables: number
   cups_per_side: number
+  cups_to_win: number
   groups_count?: number
   teams_advance_per_group?: number
 }

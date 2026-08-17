@@ -16,6 +16,7 @@ export function CreateTournamentScreen() {
     format: 'single_elimination',
     num_tables: 1,
     cups_per_side: 10,
+    cups_to_win: 10,
     groups_count: 4,
     teams_advance_per_group: 2,
   })
@@ -137,12 +138,28 @@ export function CreateTournamentScreen() {
             onChange={(v) => set('num_tables', v)}
           />
           <NumberStepper
-            label="Gobelets par équipe"
+            label="Gobelets installés"
             value={form.cups_per_side}
             min={1}
-            max={15}
-            onChange={(v) => set('cups_per_side', v)}
+            max={10}
+            onChange={(v) => {
+              setForm((current) => ({
+                ...current,
+                cups_per_side: v,
+                cups_to_win: Math.min(current.cups_to_win, v),
+              }))
+            }}
           />
+          <NumberStepper
+            label="Gobelets à mettre pour gagner"
+            value={form.cups_to_win}
+            min={1}
+            max={form.cups_per_side}
+            onChange={(v) => set('cups_to_win', v)}
+          />
+          <p className="text-zinc-500 text-xs leading-relaxed">
+            La partie s'arrête dès que l'objectif est atteint. Par défaut, tous les gobelets doivent être mis.
+          </p>
         </div>
 
         {error && (

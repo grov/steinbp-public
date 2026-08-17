@@ -22,6 +22,7 @@ import type {
   TrickEvent,
 } from '../types/database'
 import { aggregateTrickEvents } from './tricks'
+import { effectiveCupsToWin } from './cupScoring'
 
 // ── Helpers de mapping ────────────────────────────────────────
 
@@ -33,6 +34,10 @@ function recordToTournament(r: RecordModel): Tournament {
     status: r['status'] as Tournament['status'],
     num_tables: r['num_tables'] as number,
     cups_per_side: r['cups_per_side'] as number,
+    cups_to_win: effectiveCupsToWin(
+      r['cups_per_side'] as number,
+      r['cups_to_win'] as number | null,
+    ),
     groups_count: (r['groups_count'] as number | null) || null,
     teams_advance_per_group: (r['teams_advance_per_group'] as number | null) || null,
     created_by: (r['created_by'] as string) || null,
@@ -246,6 +251,7 @@ export async function finishMatch(
   winnerId: string,
   winnerCupsRemaining: number,
   cupsPerSide: number,
+  cupsToWin: number,
   trickEvents: TrickEvent[] = [],
 ): Promise<void> {
   const agg = aggregateTrickEvents(trickEvents)
@@ -273,7 +279,7 @@ export async function finishMatch(
 
   if (match.phase === 'group') {
     const updatedMatch = { ...match, winner_id: winnerId, winner_cups_remaining: winnerCupsRemaining }
-    await updateGroupStandings(updatedMatch, cupsPerSide)
+    await updateGroupStandings(updatedMatch, cupsPerSide, cupsToWin)
 
     const tournamentRecord = await pb.collection('tournaments').getOne(match.tournament_id, { requestKey: null })
     await checkAndGenerateFinalBracket(recordToTournament(tournamentRecord))
@@ -285,6 +291,7 @@ export async function editMatchResult(
   newWinnerId: string,
   newCupsRemaining: number,
   cupsPerSide: number,
+  cupsToWin: number,
   trickEvents: TrickEvent[] = [],
 ): Promise<void> {
   const oldWinnerId = match.winner_id
@@ -314,11 +321,12 @@ export async function editMatchResult(
 
   if (match.phase === 'group' && match.group_id) {
     if (oldWinnerId && match.winner_cups_remaining !== null) {
-      await reverseGroupStandings(match, cupsPerSide)
+      await reverseGroupStandings(match, cupsPerSide, cupsToWin)
     }
     await updateGroupStandings(
       { ...match, winner_id: newWinnerId, winner_cups_remaining: newCupsRemaining },
       cupsPerSide,
+      cupsToWin,
     )
   }
 }

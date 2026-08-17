@@ -1,4 +1,5 @@
 import type { MatchWithRelations, Team } from '../../types/database'
+import { cupScoreForResult } from '../../lib/cupScoring'
 
 interface TeamStat {
   team: Team
@@ -14,9 +15,10 @@ interface StatsTabProps {
   teams: Team[]
   matches: MatchWithRelations[]
   cupsPerSide: number
+  cupsToWin: number
 }
 
-export function StatsTab({ teams, matches, cupsPerSide }: StatsTabProps) {
+export function StatsTab({ teams, matches, cupsPerSide, cupsToWin }: StatsTabProps) {
   const realTeams = teams.filter((t) => !t.is_bye)
   const finishedMatches = matches.filter((m) => m.status === 'finished')
 
@@ -28,10 +30,11 @@ export function StatsTab({ teams, matches, cupsPerSide }: StatsTabProps) {
       const wins = teamMatches.filter((m) => m.winner_id === team.id).length
       const played = teamMatches.length
 
-      // Gobelets mis : cupsPerSide si victoire, cupsPerSide - winner_cups_remaining si défaite
+      // Gobelets mis : objectif atteint si victoire, tirs réussis si défaite.
       const cupsScored = teamMatches.reduce((sum, m) => {
         if (m.winner_cups_remaining === null) return sum
-        return sum + (m.winner_id === team.id ? cupsPerSide : cupsPerSide - m.winner_cups_remaining)
+        const score = cupScoreForResult(cupsPerSide, cupsToWin, m.winner_cups_remaining)
+        return sum + (m.winner_id === team.id ? score.winnerFor : score.loserFor)
       }, 0)
 
       // Gobelets restants : somme des winner_cups_remaining sur les victoires

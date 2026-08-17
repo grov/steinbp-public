@@ -101,7 +101,7 @@ Le profil joueur a été entièrement redesigné dans un style RPG : avatar hexa
 ### Admin
 - **Gestion des joueurs** — valider ou refuser les inscriptions, modifier le rôle (admin / organisateur / joueur), supprimer un compte
 - **Gestion des tournois** — accès à tous les tournois, suppression
-- **Création de tournoi** — format élimination directe ou poules + arbre, nombre de tables, gobelets par côté
+- **Création de tournoi** — format élimination directe ou poules + arbre, nombre de tables, gobelets installés et objectif à mettre pour gagner
 - **Dashboard en temps réel** — suivi des matchs, assignation des tables, saisie des scores avec tricks attribués par joueur
 - **Palmarès joueurs** — classement des joueurs uniques, filtrable Tournois / Défis
 - **Onglet Custom** — personnalisation complète du système RPG (rangs, XP, badges)

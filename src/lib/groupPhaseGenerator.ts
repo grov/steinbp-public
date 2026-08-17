@@ -1,6 +1,7 @@
 import { pb } from './pocketbase'
 import type { RecordModel } from 'pocketbase'
 import type { Group, Match, Team, Tournament } from '../types/database'
+import { cupScoreForResult } from './cupScoring'
 
 function recordToGroup(record: RecordModel): Group {
   return {
@@ -85,16 +86,14 @@ export async function generateGroupPhase(
 export async function reverseGroupStandings(
   match: Match,
   cupsPerSide: number,
+  cupsToWin: number,
 ): Promise<void> {
   if (!match.group_id || !match.winner_id || match.winner_cups_remaining === null) return
 
   const loserId = match.winner_id === match.team1_id ? match.team2_id : match.team1_id
   if (!loserId) return
 
-  const winnerCupsFor = cupsPerSide
-  const winnerCupsAgainst = cupsPerSide - match.winner_cups_remaining
-  const loserCupsFor = cupsPerSide - match.winner_cups_remaining
-  const loserCupsAgainst = cupsPerSide
+  const score = cupScoreForResult(cupsPerSide, cupsToWin, match.winner_cups_remaining)
 
   const standings = await pb.collection('group_standings').getFullList({
     filter: `group_id = "${match.group_id}" && (team_id = "${match.winner_id}" || team_id = "${loserId}")`,
@@ -108,8 +107,8 @@ export async function reverseGroupStandings(
     await pb.collection('group_standings').update(winnerStanding.id, {
       played: Math.max(0, (winnerStanding['played'] as number) - 1),
       wins: Math.max(0, (winnerStanding['wins'] as number) - 1),
-      cups_for: Math.max(0, (winnerStanding['cups_for'] as number) - winnerCupsFor),
-      cups_against: Math.max(0, (winnerStanding['cups_against'] as number) - winnerCupsAgainst),
+      cups_for: Math.max(0, (winnerStanding['cups_for'] as number) - score.winnerFor),
+      cups_against: Math.max(0, (winnerStanding['cups_against'] as number) - score.winnerAgainst),
       points: Math.max(0, (winnerStanding['points'] as number) - 2),
     })
   }
@@ -118,8 +117,8 @@ export async function reverseGroupStandings(
     await pb.collection('group_standings').update(loserStanding.id, {
       played: Math.max(0, (loserStanding['played'] as number) - 1),
       losses: Math.max(0, (loserStanding['losses'] as number) - 1),
-      cups_for: Math.max(0, (loserStanding['cups_for'] as number) - loserCupsFor),
-      cups_against: Math.max(0, (loserStanding['cups_against'] as number) - loserCupsAgainst),
+      cups_for: Math.max(0, (loserStanding['cups_for'] as number) - score.loserFor),
+      cups_against: Math.max(0, (loserStanding['cups_against'] as number) - score.loserAgainst),
     })
   }
 }
@@ -127,16 +126,14 @@ export async function reverseGroupStandings(
 export async function updateGroupStandings(
   match: Match,
   cupsPerSide: number,
+  cupsToWin: number,
 ): Promise<void> {
   if (!match.group_id || !match.winner_id || match.winner_cups_remaining === null) return
 
   const loserId = match.winner_id === match.team1_id ? match.team2_id : match.team1_id
   if (!loserId) return
 
-  const winnerCupsFor = cupsPerSide
-  const winnerCupsAgainst = cupsPerSide - match.winner_cups_remaining
-  const loserCupsFor = cupsPerSide - match.winner_cups_remaining
-  const loserCupsAgainst = cupsPerSide
+  const score = cupScoreForResult(cupsPerSide, cupsToWin, match.winner_cups_remaining)
 
   const standings = await pb.collection('group_standings').getFullList({
     filter: `group_id = "${match.group_id}" && (team_id = "${match.winner_id}" || team_id = "${loserId}")`,
@@ -150,8 +147,8 @@ export async function updateGroupStandings(
     await pb.collection('group_standings').update(winnerStanding.id, {
       played: (winnerStanding['played'] as number) + 1,
       wins: (winnerStanding['wins'] as number) + 1,
-      cups_for: (winnerStanding['cups_for'] as number) + winnerCupsFor,
-      cups_against: (winnerStanding['cups_against'] as number) + winnerCupsAgainst,
+      cups_for: (winnerStanding['cups_for'] as number) + score.winnerFor,
+      cups_against: (winnerStanding['cups_against'] as number) + score.winnerAgainst,
       points: (winnerStanding['points'] as number) + 2,
     })
   }
@@ -160,8 +157,8 @@ export async function updateGroupStandings(
     await pb.collection('group_standings').update(loserStanding.id, {
       played: (loserStanding['played'] as number) + 1,
       losses: (loserStanding['losses'] as number) + 1,
-      cups_for: (loserStanding['cups_for'] as number) + loserCupsFor,
-      cups_against: (loserStanding['cups_against'] as number) + loserCupsAgainst,
+      cups_for: (loserStanding['cups_for'] as number) + score.loserFor,
+      cups_against: (loserStanding['cups_against'] as number) + score.loserAgainst,
     })
   }
 }

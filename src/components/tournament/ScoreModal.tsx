@@ -3,10 +3,12 @@ import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { TrickAttributionPanel, slotsFromTeams } from './TrickAttributionPanel'
 import type { MatchWithRelations, TrickEvent } from '../../types/database'
+import { minimumWinnerCupsRemaining } from '../../lib/cupScoring'
 
 interface ScoreModalProps {
   match: MatchWithRelations | null
   cupsPerSide: number
+  cupsToWin: number
   onConfirm: (winnerId: string, cupsRemaining: number, trickEvents: TrickEvent[]) => Promise<void>
   onClose: () => void
   editMode?: boolean
@@ -14,7 +16,8 @@ interface ScoreModalProps {
 
 type Step = 'winner' | 'cups'
 
-export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = false }: ScoreModalProps) {
+export function ScoreModal({ match, cupsPerSide, cupsToWin, onConfirm, onClose, editMode = false }: ScoreModalProps) {
+  const minimumCups = minimumWinnerCupsRemaining(cupsPerSide, cupsToWin)
   const [step, setStep] = useState<Step>(() =>
     editMode && match?.winner_id ? 'cups' : 'winner',
   )
@@ -22,7 +25,7 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
     editMode ? (match?.winner_id ?? null) : null,
   )
   const [cups, setCups] = useState<number>(() =>
-    editMode && match?.winner_cups_remaining != null ? match.winner_cups_remaining : 1,
+    editMode && match?.winner_cups_remaining != null ? match.winner_cups_remaining : minimumCups,
   )
   const [trickEvents, setTrickEvents] = useState<TrickEvent[]>(() =>
     editMode && match?.trick_events ? [...match.trick_events] : [],
@@ -36,7 +39,7 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
 
   function handleSelectWinner(id: string) {
     setWinnerId(id)
-    setCups(1)
+    setCups(minimumCups)
     setStep('cups')
   }
 
@@ -54,7 +57,7 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
   function handleClose() {
     setStep('winner')
     setWinnerId(null)
-    setCups(1)
+    setCups(minimumCups)
     setTrickEvents([])
     onClose()
   }
@@ -99,13 +102,16 @@ export function ScoreModal({ match, cupsPerSide, onConfirm, onClose, editMode = 
 
           {/* Nombre de gobelets */}
           <div>
+            <p className="text-brand text-center text-xs font-semibold mb-2">
+              Objectif du match : {cupsToWin} gobelet{cupsToWin > 1 ? 's' : ''} à mettre sur {cupsPerSide}
+            </p>
             <p className="text-zinc-400 text-center text-sm mb-4">
               Combien de gobelets restaient au vainqueur ?
             </p>
 
             <div className="flex items-center justify-center gap-6">
               <button
-                onClick={() => setCups((c) => Math.max(1, c - 1))}
+                onClick={() => setCups((c) => Math.max(minimumCups, c - 1))}
                 className="w-16 h-16 rounded-full bg-zinc-700 text-white text-3xl font-bold
                            hover:bg-zinc-600 active:scale-95 transition-all select-none"
                 aria-label="Moins"

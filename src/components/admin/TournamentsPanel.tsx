@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext'
 import { Button } from '../ui/Button'
 import { TournamentStatusBadge } from '../ui/Badge'
 import type { Tournament } from '../../types/database'
+import { effectiveCupsToWin } from '../../lib/cupScoring'
 
 interface TournamentRow extends Tournament {
   winner_name?: string
@@ -99,6 +100,10 @@ export function TournamentsPanel() {
         status: t['status'] as Tournament['status'],
         num_tables: t['num_tables'] as number,
         cups_per_side: t['cups_per_side'] as number,
+        cups_to_win: effectiveCupsToWin(
+          t['cups_per_side'] as number,
+          t['cups_to_win'] as number | null,
+        ),
         groups_count: (t['groups_count'] as number | null) || null,
         teams_advance_per_group: (t['teams_advance_per_group'] as number | null) || null,
         created_by: (t['created_by'] as string) || null,

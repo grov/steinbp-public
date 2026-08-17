@@ -82,6 +82,7 @@ const tournament: Tournament = {
   status: 'registration',
   num_tables: 2,
   cups_per_side: 10,
+  cups_to_win: 10,
   groups_count: null,
   teams_advance_per_group: null,
   created_by: 'admin-1',

@@ -58,7 +58,14 @@ export function TournamentDashboard() {
 
   async function handleEnterScore(winnerId: string, cupsRemaining: number, trickEvents: TrickEvent[]) {
     if (!scoreMatch) return
-    await finishMatch(scoreMatch, winnerId, cupsRemaining, tournament!.cups_per_side, trickEvents)
+    await finishMatch(
+      scoreMatch,
+      winnerId,
+      cupsRemaining,
+      tournament!.cups_per_side,
+      tournament!.cups_to_win,
+      trickEvents,
+    )
     silentReload()
   }
 
@@ -69,7 +76,14 @@ export function TournamentDashboard() {
 
   async function handleEditScore(winnerId: string, cupsRemaining: number, trickEvents: TrickEvent[]) {
     if (!editMatch) return
-    await editMatchResult(editMatch, winnerId, cupsRemaining, tournament!.cups_per_side, trickEvents)
+    await editMatchResult(
+      editMatch,
+      winnerId,
+      cupsRemaining,
+      tournament!.cups_per_side,
+      tournament!.cups_to_win,
+      trickEvents,
+    )
     silentReload()
   }
 
@@ -154,6 +168,8 @@ export function TournamentDashboard() {
               onEnterScore={setScoreMatch}
               onUnassign={handleUnassign}
               onEditScore={setEditMatch}
+              cupsPerSide={tournament.cups_per_side}
+              cupsToWin={tournament.cups_to_win}
             />
           )}
 
@@ -171,7 +187,12 @@ export function TournamentDashboard() {
           )}
 
           {activeTab === 'stats' && (
-            <StatsTab teams={teams} matches={matches} cupsPerSide={tournament.cups_per_side} />
+            <StatsTab
+              teams={teams}
+              matches={matches}
+              cupsPerSide={tournament.cups_per_side}
+              cupsToWin={tournament.cups_to_win}
+            />
           )}
 
           {activeTab === 'config' && (
@@ -196,6 +217,7 @@ export function TournamentDashboard() {
         key={scoreMatch?.id ?? 'score-closed'}
         match={scoreMatch}
         cupsPerSide={tournament.cups_per_side}
+        cupsToWin={tournament.cups_to_win}
         onConfirm={handleEnterScore}
         onClose={() => setScoreMatch(null)}
       />
@@ -205,6 +227,7 @@ export function TournamentDashboard() {
         key={(editMatch?.id ?? 'edit-closed') + '-edit'}
         match={editMatch}
         cupsPerSide={tournament.cups_per_side}
+        cupsToWin={tournament.cups_to_win}
         editMode
         onConfirm={handleEditScore}
         onClose={() => setEditMatch(null)}
@@ -225,6 +248,8 @@ function QueueView({
   onEnterScore,
   onUnassign,
   onEditScore,
+  cupsPerSide,
+  cupsToWin,
 }: {
   inProgress: MatchWithRelations[]
   ready: MatchWithRelations[]
@@ -235,6 +260,8 @@ function QueueView({
   onEnterScore: (m: MatchWithRelations) => void
   onUnassign: (m: MatchWithRelations) => void
   onEditScore: (m: MatchWithRelations) => void
+  cupsPerSide: number
+  cupsToWin: number
 }) {
   const tables = availableTables.filter(Boolean) as NonNullable<MatchWithRelations['table']>[]
   const allDone = inProgress.length === 0 && ready.length === 0 && pending.length === 0
@@ -252,6 +279,8 @@ function QueueView({
               onAssignTable={onAssignTable}
               onEnterScore={onEnterScore}
               onUnassign={onUnassign}
+              cupsPerSide={cupsPerSide}
+              cupsToWin={cupsToWin}
             />
           ))}
         </Section>
@@ -267,6 +296,8 @@ function QueueView({
               availableTables={tables}
               onAssignTable={onAssignTable}
               onEnterScore={onEnterScore}
+              cupsPerSide={cupsPerSide}
+              cupsToWin={cupsToWin}
             />
           ))}
         </Section>
@@ -282,6 +313,8 @@ function QueueView({
               availableTables={tables}
               onAssignTable={onAssignTable}
               onEnterScore={onEnterScore}
+              cupsPerSide={cupsPerSide}
+              cupsToWin={cupsToWin}
               compact
             />
           ))}
@@ -306,6 +339,8 @@ function QueueView({
               onAssignTable={() => {}}
               onEnterScore={() => {}}
               onEditScore={onEditScore}
+              cupsPerSide={cupsPerSide}
+              cupsToWin={cupsToWin}
               compact
             />
           ))}
