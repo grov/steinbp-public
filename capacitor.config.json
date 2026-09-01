@@ -1,9 +1,0 @@
-{
-  "appId": "com.steinbp.app",
-  "appName": "SteinBP",
-  "webDir": "dist",
-  "server": {
-    "url": "https://steinbp.fr",
-    "androidScheme": "https"
-  }
-}

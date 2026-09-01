@@ -9,14 +9,13 @@
   <img src="https://img.shields.io/badge/stack-React%20%2B%20PocketBase-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/deploy-Docker%20%2B%20Nginx-informational?style=flat-square" />
   <img src="https://img.shields.io/badge/PWA-installable-green?style=flat-square" />
-  <img src="https://img.shields.io/badge/Android-APK-brightgreen?style=flat-square" />
 </p>
 
 ## Présentation
 
 **SteinBP** est une application web mobile-first conçue pour organiser et suivre des tournois de beer pong. Elle gère l'ensemble du cycle de vie d'un tournoi : inscriptions, création des brackets, saisie des scores en temps réel avec règles spéciales, et un **système de progression RPG** complet avec rangs, XP et badges — entièrement personnalisable depuis l'interface d'administration.
 
-L'application est accessible depuis n'importe quel navigateur, installable comme une application native (PWA) et disponible en **APK Android**.
+L'application est accessible depuis n'importe quel navigateur et installable sur mobile en tant que **PWA**.
 
 La version courante est affichée discrètement en bas à droite de l'application. Pour activer l'incrément automatique du patch à chaque commit dans un nouveau clone, exécuter une fois :
 
@@ -30,7 +29,7 @@ Une version déjà modifiée manuellement (pour une évolution mineure ou majeur
 
 ## Nouveautés v3 🆕
 
-La version 3 ajoute un **mode Défi** hors tournoi, l'**attribution des tricks au joueur** qui les réalise, un **palmarès repensé** et une **app Android** installable.
+La version 3 ajoute un **mode Défi** hors tournoi, l'**attribution des tricks au joueur** qui les réalise et un **palmarès repensé**.
 
 ### ⚔️ Mode Défi (1v1)
 
@@ -48,12 +47,6 @@ La saisie de score demande désormais **« Qui a fait quoi ? »** : chaque trick
 ### 🏆 Palmarès par joueur + filtres
 
 Le palmarès n'est plus par équipe mais par **joueur unique** (agrégé sur l'ensemble de ses matchs), avec un filtre **Tournois / Défis** pour basculer entre les deux classements. Les joueurs liés à un compte sont cliquables vers leur profil.
-
-### 📱 App Android (APK)
-
-Un workflow GitHub Actions génère un **APK Android** (via Capacitor) avec le logo du jeu en icône. L'app affiche le site en ligne dans une fenêtre native : elle suit automatiquement la version déployée, sans reconstruction à chaque mise à jour.
-
----
 
 ## Nouveautés v2
 
@@ -245,28 +238,6 @@ Une fois installée, l'app se lance en plein écran sans barre de navigateur, co
 
 ---
 
-## App Android (APK)
-
-En plus de la PWA, un **APK Android** peut être généré via GitHub Actions (avec le logo du jeu en icône).
-
-### Générer l'APK
-
-1. Onglet **Actions** du dépôt → workflow **Build Android APK**
-2. **Run workflow** (lancement manuel)
-3. Récupérer l'artifact **`steinbp-apk`** puis installer `app-debug.apk` sur le téléphone
-
-### Fonctionnement
-
-L'APK est un conteneur natif (via [Capacitor](https://capacitorjs.com/)) qui affiche le site en ligne (`server.url` dans `capacitor.config.json`). Concrètement :
-
-- L'app **suit automatiquement la version déployée** — inutile de reconstruire l'APK à chaque modification de l'application.
-- On ne régénère l'APK que pour changer **l'icône ou le nom**.
-- Une **connexion internet** est requise (l'app parle au serveur, comme dans le navigateur).
-
-> L'APK produit est en mode *debug* (non signé) : parfait pour une installation manuelle. Une version *release* signée nécessiterait un keystore fourni en secret GitHub.
-
----
-
 ## Inscription des joueurs
 
 Les joueurs s'inscrivent via `/register` (email + mot de passe + pseudo). Le compte est en attente jusqu'à validation par un admin. Une fois approuvé, le joueur accède à son profil et peut être lié à des équipes dans les tournois.
@@ -339,7 +310,6 @@ Les mises à jour de PocketBase corrigent régulièrement des failles de sécuri
 | Temps réel | PocketBase Realtime (WebSockets) |
 | Conteneurisation | Docker + Nginx |
 | PWA | vite-plugin-pwa (Workbox) |
-| App Android | Capacitor (APK via GitHub Actions) |
 | Reverse proxy | Externe et optionnel |
 
 ---
@@ -432,7 +402,6 @@ Les releases disponibles sont listées sur [github.com/pocketbase/pocketbase/rel
 - 🏅 5 nouveaux badges (Phénix, Survivant, Immortel, Boulet, Saboteur) — 32 badges au total
 - 🏆 **Palmarès par joueur unique** avec filtre Tournois / Défis (fin des doublons par équipe)
 - 🥊 Stats de **défis** ajoutées au profil ; les défis rapportent de l'XP comme les matchs de tournoi
-- 📱 **APK Android** généré via GitHub Actions (Capacitor), suit automatiquement le site déployé
 - 🎲 Nombre de tables par défaut ramené à 1 à la création d'un tournoi
 
 ### v2.0
