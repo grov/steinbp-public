@@ -9,8 +9,8 @@ services:
     volumes:
       - pocketbase_data:/pb/pb_data
     environment:
-      PB_SUPERUSER_EMAIL: ${PB_SUPERUSER_EMAIL:?PB_SUPERUSER_EMAIL doit être défini}
-      PB_SUPERUSER_PASSWORD: ${PB_SUPERUSER_PASSWORD:?PB_SUPERUSER_PASSWORD doit être défini}
+      PB_SUPERUSER_EMAIL: ${PB_SUPERUSER_EMAIL:-}
+      PB_SUPERUSER_PASSWORD: ${PB_SUPERUSER_PASSWORD:-}
     networks:
       - internal
     ports:
