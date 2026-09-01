@@ -24,7 +24,7 @@ export function App() {
   return (
     <ThemeProvider>
     <AuthProvider>
-      <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <HashRouter>
         <Routes>
           {/* ── Public ──────────────────────────────────── */}
           <Route path="/login" element={<LoginScreen />} />
