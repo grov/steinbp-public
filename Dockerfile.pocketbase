@@ -10,4 +10,4 @@ RUN wget -qO /tmp/pb.zip \
 WORKDIR /pb
 COPY pocketbase/pb_migrations /pb/pb_migrations
 EXPOSE 8090
-CMD ["sh", "-c", "./pocketbase superuser upsert little@local.com littlestein && exec ./pocketbase serve --http=0.0.0.0:8090"]
+CMD ["sh", "-c", "./pocketbase superuser upsert \"$PB_SUPERUSER_EMAIL\" \"$PB_SUPERUSER_PASSWORD\" && exec ./pocketbase serve --http=0.0.0.0:8090"]

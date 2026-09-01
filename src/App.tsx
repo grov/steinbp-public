@@ -2,6 +2,7 @@ import { HashRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { ManagerRoute, ProfileRoute, RoleRedirect } from './components/ProtectedRoute'
+import { AppVersion } from './components/AppVersion'
 
 import { LoginScreen } from './screens/LoginScreen'
 import { PlayerRegistrationScreen } from './screens/PlayerRegistrationScreen'
@@ -29,7 +30,10 @@ export function App() {
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<PlayerRegistrationScreen />} />
           <Route path="/display/:id" element={<PublicDisplayScreen />} />
-          <Route path="/player/:id" element={<PlayerProfileScreen />} />
+          <Route
+            path="/player/:id"
+            element={<ProfileRoute><PlayerProfileScreen /></ProfileRoute>}
+          />
 
           {/* Redirige selon le rôle après connexion */}
           <Route path="/" element={<RoleRedirect />} />
@@ -73,6 +77,7 @@ export function App() {
             element={<ManagerRoute><TournamentDashboard /></ManagerRoute>}
           />
         </Routes>
+        <AppVersion />
       </HashRouter>
     </AuthProvider>
     </ThemeProvider>

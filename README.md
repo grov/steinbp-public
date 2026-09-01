@@ -18,6 +18,14 @@
 
 L'application est accessible depuis n'importe quel navigateur, installable comme une application native (PWA) et disponible en **APK Android**.
 
+La version courante est affichée discrètement en bas à droite de l'application. Pour activer l'incrément automatique du patch à chaque commit dans un nouveau clone, exécuter une fois :
+
+```bash
+npm run hooks:install
+```
+
+Une version déjà modifiée manuellement (pour une évolution mineure ou majeure) est conservée telle quelle par le hook.
+
 ---
 
 ## Nouveautés v3 🆕
