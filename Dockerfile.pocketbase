@@ -2,12 +2,17 @@ FROM alpine:3.21.7
 RUN apk add --no-cache ca-certificates wget unzip
 
 ARG PB_VERSION=0.38.1
-RUN wget -qO /tmp/pb.zip \
+# SHA256 de pocketbase_${PB_VERSION}_linux_amd64.zip (checksums.txt de la release).
+# À mettre à jour en même temps que PB_VERSION.
+ARG PB_SHA256=aef37fd0dac37885aa5d2523ca246e50a6c8e2917156ad14a896531d3d50bd2c
+RUN { test -n "$PB_SHA256" || { echo "PB_SHA256 manquant (voir .env.example)" >&2; exit 1; }; } \
+    && wget -qO /tmp/pb.zip \
     "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" \
+    && echo "${PB_SHA256}  /tmp/pb.zip" | sha256sum -c - \
     && unzip /tmp/pb.zip -d /pb \
     && rm /tmp/pb.zip
 
 WORKDIR /pb
 COPY pocketbase/pb_migrations /pb/pb_migrations
 EXPOSE 8090
-CMD ["sh", "-c", "if [ -n \"$PB_SUPERUSER_EMAIL\" ] && [ -n \"$PB_SUPERUSER_PASSWORD\" ]; then ./pocketbase superuser upsert \"$PB_SUPERUSER_EMAIL\" \"$PB_SUPERUSER_PASSWORD\"; fi && exec ./pocketbase serve --http=0.0.0.0:8090"]
+CMD ["./pocketbase", "serve", "--http=0.0.0.0:8090"]

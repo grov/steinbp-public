@@ -6,15 +6,14 @@ services:
       dockerfile: Dockerfile.pocketbase
       args:
         PB_VERSION: ${PB_VERSION}
+        PB_SHA256: ${PB_SHA256}
     volumes:
       - pocketbase_data:/pb/pb_data
-    environment:
-      PB_SUPERUSER_EMAIL: ${PB_SUPERUSER_EMAIL:-}
-      PB_SUPERUSER_PASSWORD: ${PB_SUPERUSER_PASSWORD:-}
     networks:
       - internal
     ports:
-      - "8091:8090"
+      # Accès direct réservé à la machine hôte (tunnel SSH pour le panel /_/)
+      - "127.0.0.1:8091:8090"
     restart: unless-stopped
 
   steinbp:
