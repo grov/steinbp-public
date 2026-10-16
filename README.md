@@ -246,12 +246,13 @@ Les joueurs s'inscrivent via `/register` (email + mot de passe + pseudo). Le com
 
 ## Sécurité
 
-### 1. Changer les credentials par défaut
+### 1. Aucun compte par défaut
 
-Après la première connexion, modifiez immédiatement le compte superadmin créé automatiquement (`little@local.com` / `littlestein`) :
+Aucun superuser n'est créé automatiquement : il est créé une seule fois à l'installation (voir [Première installation](#première-installation)) et se gère ensuite uniquement depuis le panel `/_/`.
 
-- Dans le panel PocketBase (`/_/`) → icône profil (bas à gauche) → **"Edit profile"**
-- Changez l'email et le mot de passe
+> Les anciennes versions créaient un superuser par défaut `little@local.com`. Sur une instance installée avec ces versions, supprimez ce compte (ou changez son mot de passe) depuis le panel → **Collections → _superusers**.
+
+L'inscription publique (`/register`) ne peut créer qu'un compte **joueur en attente** : le rôle et la validation sont imposés côté serveur par les règles PocketBase.
 
 ### 2. Activer le MFA sur le superadmin PocketBase
 
@@ -267,19 +268,18 @@ Le panel `/_/` donne un accès total à la base de données. Il est fortement re
 
 ### 3. Restreindre l'accès au panel d'administration
 
-Une fois la configuration initiale terminée, il est conseillé de bloquer l'accès public à `/_/`. Modifiez `nginx.conf` pour le restreindre à votre réseau local :
+Le port direct de PocketBase (`8091`) n'est publié que sur `127.0.0.1` de la machine hôte. Pour accéder au panel sans l'exposer, passez par un tunnel SSH :
 
-```nginx
-location ~ ^/_/ {
-    allow 192.168.1.0/24;  # adaptez à votre réseau local
-    deny all;
-    proxy_pass http://pocketbase:8090;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-}
+```bash
+ssh -L 8091:127.0.0.1:8091 user@serveur
+# puis ouvrir http://localhost:8091/_/
 ```
 
-Puis reconstruisez l'image : `docker compose build steinbp && docker compose up -d`
+Le chemin `/_/` reste aussi servi par le nginx de l'app : bloquez-le sur l'accès public au niveau du reverse proxy amont (BunkerWeb, etc.).
+
+### Protection contre le brute-force
+
+PocketBase applique un rate limiting sur l'authentification, la création de compte et les demandes d'e-mail (migration `enable_auth_rate_limits`). L'IP client est lue dans `X-Real-IP`, renseigné par le nginx de l'app à partir du `X-Forwarded-For` du reverse proxy amont (réseaux privés uniquement). Après un déploiement, vérifiez dans le panel → **Logs** que les requêtes affichent bien l'IP réelle des clients et non celle du proxy.
 
 ### 4. Sauvegarder les données régulièrement
 
@@ -316,16 +316,13 @@ Les mises à jour de PocketBase corrigent régulièrement des failles de sécuri
 
 ## Première installation
 
-Au premier démarrage, un compte super-admin PocketBase est automatiquement créé :
+Au premier démarrage, créez le compte super-admin PocketBase **une seule fois** :
 
-| Champ | Valeur |
-|-------|--------|
-| Email | `little@local.com` |
-| Mot de passe | `littlestein` |
+```bash
+docker compose exec pocketbase ./pocketbase superuser create "<email>" "<mot-de-passe-long-et-unique>"
+```
 
-Ce compte donne accès au panel d'administration de la base de données sur `http://<votre-serveur>:<APP_PORT>/_/`.
-
-> **Important :** Changez ce mot de passe depuis le panel PocketBase (`/_/` → icône profil) après la première connexion.
+Ce compte donne accès au panel d'administration de la base de données (voir [Restreindre l'accès au panel](#3-restreindre-laccès-au-panel-dadministration)). Il n'est jamais recréé ni réinitialisé au redémarrage : les changements faits depuis le panel sont conservés.
 
 ### Créer le premier utilisateur admin de l'application
 
@@ -380,7 +377,10 @@ La version de PocketBase est définie dans le fichier `.env` via la variable `PB
 ```bash
 # Dans .env
 PB_VERSION=0.39.0
+PB_SHA256=<sha256 de pocketbase_0.39.0_linux_amd64.zip>
 ```
+
+Le hash se trouve dans le fichier `checksums.txt` de la release. Le build échoue si le fichier téléchargé ne correspond pas.
 
 ```bash
 docker compose build pocketbase
