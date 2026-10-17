@@ -10,6 +10,7 @@ import { EventHeader, HeaderButton } from '../components/tournament/EventHeader'
 import { Modal } from '../components/ui/Modal'
 import { compareStandings, officialRulesText } from '../lib/standings'
 import { teamProgress, type TeamProgress } from '../lib/teamProgress'
+import { teamPlayers } from '../lib/records'
 import type { MatchWithRelations, Team, Tournament } from '../types/database'
 
 export function TournamentViewScreen() {
@@ -50,8 +51,17 @@ export function TournamentViewScreen() {
   if (selectedTeam) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex flex-col">
-        <EventHeader title={selectedTeam.name} onBack={() => setSelectedTeam(null)} />
+        <EventHeader
+          title={selectedTeam.name}
+          onBack={() => setSelectedTeam(null)}
+          actions={selectedTeam.duo_id ? (
+            <HeaderButton onClick={() => navigate(`/team/${selectedTeam.duo_id}`)}>Fiche équipe</HeaderButton>
+          ) : undefined}
+        />
         <main className="max-w-2xl w-full mx-auto px-4 py-6">
+          {teamPlayers(selectedTeam) && (
+            <p className="text-zinc-400 text-sm mb-4">{teamPlayers(selectedTeam)}</p>
+          )}
           <TeamMatches
             teamId={selectedTeam.id}
             matches={matches}

@@ -39,6 +39,11 @@ export function recordToTournament(r: RecordModel): Tournament {
   }
 }
 
+/** Prénoms des joueurs d'une équipe : « Hans & Yoann ». */
+export function teamPlayers(team: Pick<Team, 'player1_name' | 'player2_name'>): string {
+  return [team.player1_name, team.player2_name].filter(Boolean).join(' & ')
+}
+
 export function recordToTeam(r: RecordModel): Team {
   return {
     id: r.id,
@@ -48,6 +53,7 @@ export function recordToTeam(r: RecordModel): Team {
     player2_name: r['player2_name'] as string,
     player1_id: (r['player1_id'] as string) || null,
     player2_id: (r['player2_id'] as string) || null,
+    duo_id: (r['duo_id'] as string) || null,
     is_bye: r['is_bye'] as boolean,
     seed: (r['seed'] as number | null) || null,
     created: r.created,

@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { addTeam, removeTeam, startTournament } from '../lib/tournamentActions'
 import { useTournament } from '../hooks/useTournament'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PlayerSearchInput } from '../components/tournament/PlayerSearchInput'
+import { DuoHint } from '../components/tournament/DuoHint'
+import { useKnownDuo } from '../hooks/useKnownDuo'
 import type { CreateTeamPayload } from '../types/database'
 
 export function RegisterTeamsScreen() {
@@ -22,6 +24,11 @@ export function RegisterTeamsScreen() {
   const [starting, setStarting] = useState(false)
   const [randomize, setRandomize] = useState(true)
   const [teamOrder, setTeamOrder] = useState<string[]>([])
+  const knownDuo = useKnownDuo(p1Id, p2Id)
+  // Duo déjà connu : on reprend son nom si aucun nom n'a été saisi.
+  useEffect(() => {
+    if (knownDuo) setName((current) => current.trim() ? current : knownDuo.name)
+  }, [knownDuo])
 
   const realTeams = teams.filter((t) => !t.is_bye)
 
@@ -120,13 +127,6 @@ export function RegisterTeamsScreen() {
         {/* Formulaire d'ajout */}
         <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 flex flex-col gap-3">
           <p className="text-sm font-bold text-zinc-300">Nouvelle équipe</p>
-          <Input
-            id="team-name"
-            label="Nom de l'équipe"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Les Imbuvables"
-          />
           <div className="grid grid-cols-2 gap-3">
             <PlayerSearchInput
               label="Joueur 1"
@@ -146,6 +146,14 @@ export function RegisterTeamsScreen() {
             />
           </div>
 
+          <Input
+            id="team-name"
+            label="Nom de l'équipe"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Les Imbuvables"
+          />
+          <DuoHint duo={knownDuo} name={name} />
           {formError && (
             <p className="text-red-400 text-sm">{formError}</p>
           )}

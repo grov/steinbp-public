@@ -16,6 +16,9 @@ import type { RecordModel } from 'pocketbase'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { PlayerSearchInput } from './PlayerSearchInput'
+import { DuoHint } from './DuoHint'
+import { useKnownDuo } from '../../hooks/useKnownDuo'
+import { linkDuo } from '../../lib/duos'
 import type { GameTable, Team, Tournament } from '../../types/database'
 
 type PlayerMini = { id: string; display_name: string; avatar_url: string | null }
@@ -358,6 +361,12 @@ function TeamsSection({
         }
 
         if (Object.keys(updates).length > 0) {
+          const duoId = await linkDuo(
+            updates.player1_id ?? team.player1_id,
+            updates.player2_id ?? team.player2_id,
+            team.name,
+          )
+          if (duoId) updates.duo_id = duoId
           await pb.collection('teams').update(team.id, updates, { requestKey: null })
         }
       }
@@ -602,6 +611,7 @@ function EditTeamForm({
   const [p2Id, setP2Id] = useState<string | null>(team.player2_id ?? null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const knownDuo = useKnownDuo(p1Id, p2Id)
 
   async function handleSave() {
     if (!name.trim()) { setError('Nom requis.'); return }
@@ -630,6 +640,7 @@ function EditTeamForm({
   return (
     <div className="bg-zinc-800 border border-brand/30 rounded-xl p-4 flex flex-col gap-3">
       <Input label="Nom de l'équipe" value={name} onChange={(e) => setName(e.target.value)} />
+      <DuoHint duo={knownDuo} name={name} />
       <div className="grid grid-cols-2 gap-3">
         <PlayerSearchInput
           label="Joueur 1"
@@ -674,6 +685,11 @@ function AddTeamForm({
   const [p2Id, setP2Id] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const knownDuo = useKnownDuo(p1Id, p2Id)
+  // Duo déjà connu : on reprend son nom si aucun nom n'a été saisi.
+  useEffect(() => {
+    if (knownDuo) setName((current) => current.trim() ? current : knownDuo.name)
+  }, [knownDuo])
 
   async function handleAdd() {
     if (!name.trim()) { setError('Nom requis.'); return }
@@ -703,7 +719,6 @@ function AddTeamForm({
   return (
     <div className="bg-zinc-800 border border-brand/30 rounded-xl p-4 flex flex-col gap-3">
       <p className="text-sm font-bold text-zinc-300">Nouvelle équipe</p>
-      <Input label="Nom de l'équipe" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
       <div className="grid grid-cols-2 gap-3">
         <PlayerSearchInput
           label="Joueur 1"
@@ -721,6 +736,8 @@ function AddTeamForm({
           placeholder="Optionnel…"
         />
       </div>
+      <Input label="Nom de l'équipe" value={name} onChange={(e) => setName(e.target.value)} />
+      <DuoHint duo={knownDuo} name={name} />
       {error && <p className="text-red-400 text-sm">{error}</p>}
       <div className="flex gap-2">
         <Button variant="ghost" size="sm" onClick={onCancel}>Annuler</Button>

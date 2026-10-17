@@ -105,6 +105,7 @@ function makeTeams(count: number): Team[] {
     player2_name: `Joueur ${index * 2 + 2}`,
     player1_id: null,
     player2_id: null,
+    duo_id: null,
     is_bye: false,
     seed: index + 1,
     created: '2026-01-01T00:00:00.000Z',

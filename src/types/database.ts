@@ -47,8 +47,25 @@ export interface Team {
   player2_name: string
   player1_id: string | null
   player2_id: string | null
+  /** Duo permanent (paire de joueurs avec compte) ; null pour un invité ou un bye. */
+  duo_id: string | null
   is_bye: boolean
   seed: number | null
+  created: string
+}
+
+/**
+ * Paire de joueurs permanente : la même équipe d'un tournoi à l'autre.
+ * player1 < player2 (tri par id) pour qu'une paire n'existe qu'une fois.
+ */
+export interface Duo {
+  id: string
+  player1: string
+  player2: string
+  /** Dernier nom d'équipe choisi pour ce duo. */
+  name: string
+  /** Désignée légendaire par l'admin (sinon automatique, voir isLegendary). */
+  legendary: boolean
   created: string
 }
 

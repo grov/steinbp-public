@@ -1,6 +1,7 @@
 import type { MatchWithRelations, Team, Tournament } from '../../types/database'
 import { ScorePill, matchSides } from './ScorePill'
 import { MatchTimer, isTimedMatch } from './MatchTimer'
+import { teamPlayers } from '../../lib/records'
 
 export function formatTime(iso: string | null): string {
   if (!iso) return '--:--'
@@ -69,7 +70,12 @@ function TeamName({
   if (!team || team.is_bye) {
     return <span className={`flex-1 min-w-0 text-zinc-500 text-sm ${alignClass}`}>{team ? '—' : 'À déterminer'}</span>
   }
-  const content = <span className="line-clamp-2 break-words">{team.name}</span>
+  const content = (
+    <>
+      <span className="line-clamp-2 break-words">{team.name}</span>
+      <span className="block truncate text-[11px] font-normal text-zinc-500">{teamPlayers(team)}</span>
+    </>
+  )
   return onClick ? (
     <button
       onClick={() => onClick(team)}

@@ -10,13 +10,14 @@ import {
   type PlayerTournament,
 } from '../lib/playerActions'
 import { fetchAppSettings, computeXp, getRankInfo, DEFAULT_SETTINGS } from '../lib/settingsActions'
-import { pb } from '../lib/pocketbase'
+import { fetchPlayerDuos, type PlayerDuo } from '../lib/duos'
 import { useAuth } from '../context/AuthContext'
 import { useTheme, THEME_META } from '../context/ThemeContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { ViewSwitch } from '../components/ViewSwitch'
-import type { Player, PlayerStats, Team } from '../types/database'
+import { RpgStatBox, SectionTitle } from '../components/ui/ProfileSection'
+import type { Player, PlayerStats } from '../types/database'
 import type { AppSettings } from '../types/settings'
 
 // ── Écran principal ───────────────────────────────────────────
@@ -32,7 +33,7 @@ export function PlayerProfileScreen() {
   const [profile, setProfile] = useState<Player | null>(null)
   const [stats, setStats] = useState<PlayerStats | null>(null)
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
-  const [, setTeams] = useState<Team[]>([])
+  const [playerDuos, setPlayerDuos] = useState<PlayerDuo[]>([])
   const [playerTournaments, setPlayerTournaments] = useState<PlayerTournament[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -57,36 +58,22 @@ export function PlayerProfileScreen() {
     return () => { active = false }
   }, [targetId, isSelf])
 
-  // Effect 2 : stats + équipes + tournois
+  // Effect 2 : stats + duos + tournois
   useEffect(() => {
     if (!targetId) return
     let active = true
     Promise.all([
       fetchPlayerStats(targetId),
       fetchAppSettings(),
-      pb.collection('teams').getFullList({
-        filter: `player1_id = "${targetId}" || player2_id = "${targetId}"`,
-        requestKey: `teams-${targetId}`,
-      }).then(recs => recs.map(r => ({
-        id: r.id,
-        tournament_id: r['tournament_id'] as string,
-        name: r['name'] as string,
-        player1_name: r['player1_name'] as string,
-        player2_name: r['player2_name'] as string,
-        player1_id: (r['player1_id'] as string) || null,
-        player2_id: (r['player2_id'] as string) || null,
-        is_bye: r['is_bye'] as boolean,
-        seed: (r['seed'] as number | null) || null,
-        created: r.created,
-      }))),
+      fetchPlayerDuos(targetId),
       fetchPlayerTournaments(targetId),
     ])
-      .then(([s, appSettings, t, pt]) => {
+      .then(([s, appSettings, duos, pt]) => {
         if (!active) return
-        setStats(s as PlayerStats)
-        setSettings(appSettings as AppSettings)
-        setTeams(t as Team[])
-        setPlayerTournaments(pt as PlayerTournament[])
+        setStats(s)
+        setSettings(appSettings)
+        setPlayerDuos(duos)
+        setPlayerTournaments(pt)
       })
       .catch((e: unknown) => {
         if (!active) return
@@ -147,23 +134,12 @@ export function PlayerProfileScreen() {
             <StatsSection stats={stats} />
             <SpecialEventsSection stats={stats} />
             <BadgesSection stats={stats} settings={settings} />
+            {playerDuos.length > 0 && <DuosSection playerDuos={playerDuos} />}
             {playerTournaments.length > 0 && <TournamentsSection playerTournaments={playerTournaments} />}
             <div className="text-center text-zinc-800 text-xs tracking-[6px] select-none">· · · ✦ · · ·</div>
           </>
         )}
       </div>
-    </div>
-  )
-}
-
-// ── SectionTitle ──────────────────────────────────────────────
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 mb-4">
-      <div className="flex-1 h-px bg-zinc-800" />
-      <p className="text-[10px] font-bold uppercase tracking-[4px] text-zinc-600">{children}</p>
-      <div className="flex-1 h-px bg-zinc-800" />
     </div>
   )
 }
@@ -478,22 +454,6 @@ function StatsSection({ stats }: { stats: PlayerStats }) {
   )
 }
 
-function RpgStatBox({
-  icon, label, value, highlight = false,
-}: { icon: string; label: string; value: number; highlight?: boolean }) {
-  return (
-    <div className={`rounded-xl p-4 border relative overflow-hidden
-      ${highlight ? 'bg-brand/10 border-brand/25' : 'bg-zinc-900 border-zinc-800'}`}
-    >
-      {highlight && (
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
-      )}
-      <span className="text-xl block mb-1">{icon}</span>
-      <p className={`text-3xl font-black ${highlight ? 'text-brand' : 'text-white'}`}>{value}</p>
-      <p className="text-zinc-500 text-xs mt-1">{label}</p>
-    </div>
-  )
-}
 
 // ── Section Règles Spéciales ──────────────────────────────────
 
@@ -563,6 +523,40 @@ function BadgesSection({ stats, settings }: { stats: PlayerStats; settings: AppS
             </div>
           )
         })}
+      </div>
+    </section>
+  )
+}
+
+// ── Section Équipes ───────────────────────────────────────────
+
+function DuosSection({ playerDuos }: { playerDuos: PlayerDuo[] }) {
+  return (
+    <section>
+      <SectionTitle>Équipes ({playerDuos.length})</SectionTitle>
+      <div className="flex flex-col gap-2">
+        {playerDuos.map(({ duo, partnerName, tournamentsPlayed, legendary }) => (
+          <Link
+            key={duo.id}
+            to={`/team/${duo.id}`}
+            className={`rounded-xl px-4 py-3 border flex items-center justify-between gap-3 transition-colors
+              ${legendary ? 'bg-brand/10 border-brand/25 hover:bg-brand/15' : 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800'}`}
+          >
+            <div className="min-w-0">
+              <p className="font-semibold text-white text-sm truncate">
+                {legendary && <span className="mr-1.5">🏛️</span>}
+                {duo.name}
+              </p>
+              <p className="text-zinc-500 text-xs mt-0.5 truncate">avec {partnerName}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-zinc-500 tabular-nums">
+                {tournamentsPlayed} tournoi{tournamentsPlayed > 1 ? 's' : ''}
+              </span>
+              <span className="text-zinc-600 text-sm">›</span>
+            </div>
+          </Link>
+        ))}
       </div>
     </section>
   )

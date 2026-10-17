@@ -1,5 +1,6 @@
 import type { GroupStandingWithTeam, Team } from '../../types/database'
 import { compareStandings, qualifiedCountFor } from '../../lib/standings'
+import { teamPlayers } from '../../lib/records'
 
 /**
  * Classement façon tableau officiel : rang (vert qualifié / rouge éliminé),
@@ -48,11 +49,16 @@ export function RankingList({
               type="button"
               disabled={!onTeamClick}
               onClick={() => onTeamClick?.(standing.team)}
-              className={`flex-1 min-w-0 h-11 rounded-xl flex items-center gap-2 px-3 text-left
+              className={`flex-1 min-w-0 min-h-11 py-1 rounded-xl flex items-center gap-2 px-3 text-left
                 ${isMine ? 'bg-highlight text-black' : 'bg-zinc-900 text-white'}
                 ${onTeamClick ? 'active:scale-98 transition-transform' : ''}`}
             >
-              <span className="flex-1 min-w-0 truncate font-medium">{standing.team.name || '?'}</span>
+              <span className="flex-1 min-w-0 flex flex-col leading-tight">
+                <span className="truncate font-medium">{standing.team.name || '?'}</span>
+                {teamPlayers(standing.team) && (
+                  <span className={`truncate text-[11px] ${isMine ? 'text-black/60' : 'text-zinc-500'}`}>{teamPlayers(standing.team)}</span>
+                )}
+              </span>
               <span className="w-9 text-center tabular-nums shrink-0">{standing.played}</span>
               <span className="w-10 text-center tabular-nums font-semibold shrink-0">{standing.points}</span>
               <span className="w-10 text-center tabular-nums shrink-0">{diff}</span>

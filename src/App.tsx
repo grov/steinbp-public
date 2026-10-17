@@ -19,6 +19,7 @@ import { ChallengesScreen } from './screens/ChallengesScreen'
 import { NewChallengeScreen } from './screens/NewChallengeScreen'
 import { MyTournamentsScreen } from './screens/MyTournamentsScreen'
 import { TournamentViewScreen } from './screens/TournamentViewScreen'
+import { DuoProfileScreen } from './screens/DuoProfileScreen'
 
 export function App() {
   return (
@@ -59,6 +60,10 @@ export function App() {
           <Route
             path="/my-tournaments"
             element={<ProfileRoute><MyTournamentsScreen /></ProfileRoute>}
+          />
+          <Route
+            path="/team/:id"
+            element={<ProfileRoute><DuoProfileScreen /></ProfileRoute>}
           />
           <Route
             path="/my-tournaments/:id"

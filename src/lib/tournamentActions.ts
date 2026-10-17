@@ -22,6 +22,7 @@ import type {
 } from '../types/database'
 import { aggregateTrickEvents } from './tricks'
 import { winnerCupsRemaining } from './standings'
+import { linkDuo } from './duos'
 import {
   recordToGameTable,
   recordToMatchWithRelations,
@@ -98,8 +99,11 @@ export async function resetTournament(tournamentId: string): Promise<void> {
   await pb.collection('tournaments').update(tournamentId, { status: 'registration' })
 }
 
+// Une équipe dont les deux joueurs ont un compte est rattachée à son duo
+// permanent, qui prend le nom choisi pour ce tournoi.
 export async function addTeam(payload: CreateTeamPayload): Promise<Team> {
-  const record = await pb.collection('teams').create(payload)
+  const duo_id = await linkDuo(payload.player1_id, payload.player2_id, payload.name)
+  const record = await pb.collection('teams').create({ ...payload, duo_id })
   return recordToTeam(record)
 }
 
@@ -117,7 +121,8 @@ export async function updateTeam(
     player2_id?: string | null
   },
 ): Promise<void> {
-  await pb.collection('teams').update(teamId, payload)
+  const duo_id = await linkDuo(payload.player1_id, payload.player2_id, payload.name)
+  await pb.collection('teams').update(teamId, { ...payload, duo_id })
 }
 
 // ── Gestion des tables physiques ──────────────────────────────
@@ -306,6 +311,7 @@ export async function fetchGroupsWithStandings(tournamentId: string): Promise<Gr
               player2_name: '',
               player1_id: null,
               player2_id: null,
+              duo_id: null,
               is_bye: false,
               seed: null,
               created: '',

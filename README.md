@@ -201,6 +201,17 @@ Côté joueur, la page du tournoi met **son équipe** au centre : bandeau de sit
 
 ---
 
+## Équipes (duos)
+
+Une **équipe** est un duo de joueurs : la même paire forme la même équipe d'un tournoi à l'autre, quel que soit l'ordre d'inscription. Un joueur remplacé donne un nouveau duo.
+
+- Le duo est créé automatiquement quand ses deux joueurs (avec un compte) sont inscrits ensemble. En réinscrivant la même paire, l'app propose le nom du duo.
+- Le nom choisi pour un tournoi devient le nom du duo ; les tournois passés gardent le nom de l'époque. L'orga et l'admin peuvent aussi le renommer depuis la fiche équipe.
+- **Fiche équipe** : tournois joués et gagnés, bilan des matchs, gobelets, adversaires les plus affrontés, historique. Accessible depuis le profil des joueurs (section « Équipes ») et depuis la vue d'une équipe dans un tournoi.
+- **🏛️ Équipe légendaire** : automatique à partir de 5 tournois ensemble, ou décernée par l'admin.
+
+---
+
 ## Mode Défi
 
 Un **défi** est un match 1v1 joué en dehors de tout tournoi — idéal pour une partie rapide entre amis.
