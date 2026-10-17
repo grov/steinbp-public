@@ -41,6 +41,9 @@ export interface XpWeights {
   matches_played: number
   matches_won: number
   tournaments_won: number
+  /** Les défis ont leur propre barème, plus faible que les matchs de tournoi. */
+  challenges_played: number
+  challenges_won: number
 }
 
 // ── Settings globales ─────────────────────────────────────────

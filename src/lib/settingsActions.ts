@@ -75,6 +75,8 @@ export const DEFAULT_XP_WEIGHTS: XpWeights = {
   matches_played: 1,
   matches_won: 0,
   tournaments_won: 0,
+  challenges_played: 0,
+  challenges_won: 1,
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -86,15 +88,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
 // ── Helpers ───────────────────────────────────────────────────
 
 /** Calcule le score XP d'un joueur selon les poids configurés.
- *  Les défis rapportent de l'XP au même titre que les matchs de tournoi
- *  (un défi joué/gagné compte comme un match joué/gagné). */
+ *  Les défis ont leur propre barème : une victoire en défi rapporte moins
+ *  qu'une victoire en tournoi. */
 export function computeXp(stats: PlayerStats, weights: XpWeights): number {
-  const played = stats.matches_played + stats.challenges_played
-  const won    = stats.matches_won    + stats.challenges_won
   return Math.round(
-    played                * weights.matches_played +
-    won                   * weights.matches_won    +
-    stats.tournaments_won * weights.tournaments_won,
+    stats.matches_played    * weights.matches_played    +
+    stats.matches_won       * weights.matches_won       +
+    stats.tournaments_won   * weights.tournaments_won   +
+    stats.challenges_played * weights.challenges_played +
+    stats.challenges_won    * weights.challenges_won,
   )
 }
 
@@ -140,7 +142,9 @@ export async function fetchAppSettings(): Promise<AppSettings> {
     return {
       rank_tiers: (rec['rank_tiers'] as RankTierConfig[] | null) ?? DEFAULT_RANK_TIERS,
       badges:     (rec['badges']     as BadgeConfig[]    | null) ?? DEFAULT_BADGES,
-      xp_weights: (rec['xp_weights'] as XpWeights        | null) ?? DEFAULT_XP_WEIGHTS,
+      // Fusion avec les défauts : les réglages enregistrés avant l'ajout du
+      // barème des défis n'ont pas ces clés.
+      xp_weights: { ...DEFAULT_XP_WEIGHTS, ...(rec['xp_weights'] as Partial<XpWeights> | null) },
     }
   } catch {
     // Collection absente ou erreur réseau → on renvoie les valeurs par défaut

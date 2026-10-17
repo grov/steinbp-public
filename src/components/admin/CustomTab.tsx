@@ -166,11 +166,16 @@ export function CustomTab() {
 
   // ── Aperçu XP ─────────────────────────────────────────────
 
-  const { matches_played: wp, matches_won: ww, tournaments_won: wt } = draft.xp_weights
+  const {
+    matches_played: wp, matches_won: ww, tournaments_won: wt,
+    challenges_played: cp, challenges_won: cw,
+  } = draft.xp_weights
   const xpFormula = [
     wp > 0 && `Matchs joués × ${wp}`,
     ww > 0 && `Matchs gagnés × ${ww}`,
     wt > 0 && `Tournois gagnés × ${wt}`,
+    cp > 0 && `Défis joués × ${cp}`,
+    cw > 0 && `Défis gagnés × ${cw}`,
   ].filter(Boolean).join(' + ') || '0'
 
   const sortedTiers = [...draft.rank_tiers].sort((a, b) => a.min - b.min)
@@ -190,6 +195,7 @@ export function CustomTab() {
         </p>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col gap-4">
+          <p className="text-[10px] text-zinc-500 uppercase tracking-wide -mb-2">Tournois</p>
           <div className="grid grid-cols-3 gap-3">
             <WeightInput
               label="Matchs joués"
@@ -205,6 +211,20 @@ export function CustomTab() {
               label="Tournois gagnés"
               value={wt}
               onChange={v => updateWeight('tournaments_won', v)}
+            />
+          </div>
+
+          <p className="text-[10px] text-zinc-500 uppercase tracking-wide -mb-2">Défis (hors tournoi)</p>
+          <div className="grid grid-cols-3 gap-3">
+            <WeightInput
+              label="Défis joués"
+              value={cp}
+              onChange={v => updateWeight('challenges_played', v)}
+            />
+            <WeightInput
+              label="Défis gagnés"
+              value={cw}
+              onChange={v => updateWeight('challenges_won', v)}
             />
           </div>
 
