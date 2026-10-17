@@ -21,7 +21,9 @@ export function TournamentDashboard() {
   const { tournament, teams, tables, matches, groups, loading, silentReload } = useTournament(id)
   const { isAdmin } = useAuth()
 
-  const [activeTab, setActiveTab] = useState<Tab>('queue')
+  // Pas de choix explicite : Config tant que les inscriptions sont ouvertes
+  // (l'onglet Matchs est vide), Matchs ensuite.
+  const [chosenTab, setActiveTab] = useState<Tab | null>(null)
   const [scoreMatch, setScoreMatch] = useState<MatchWithRelations | null>(null)
   const [editMatch, setEditMatch] = useState<MatchWithRelations | null>(null)
   const [locallyStarted, setLocallyStarted] = useState(false)
@@ -44,6 +46,7 @@ export function TournamentDashboard() {
     )
   }
 
+  const activeTab: Tab = chosenTab ?? (tournament.status === 'registration' ? 'config' : 'queue')
   const availableTables = tables.filter((t) => t.is_available)
   const inProgressMatches = matches.filter((m) => m.status === 'in_progress')
   const readyMatches = matches.filter((m) => m.status === 'ready')
@@ -201,7 +204,7 @@ export function TournamentDashboard() {
               isFinished={isFinished}
               isAdmin={isAdmin}
               onRefresh={silentReload}
-              onStarted={() => setLocallyStarted(true)}
+              onStarted={() => { setLocallyStarted(true); setActiveTab('queue') }}
               onFinished={() => setLocallyFinished(true)}
               onReset={() => { setLocallyStarted(false); setLocallyFinished(false) }}
             />
