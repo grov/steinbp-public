@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { MatchStatus, TournamentStatus } from '../../types/database'
+import type { MatchStatus, TournamentFormat, TournamentStatus } from '../../types/database'
 
 type BadgeVariant = 'orange' | 'green' | 'blue' | 'red' | 'zinc' | 'yellow'
 
@@ -42,10 +42,10 @@ export function MatchStatusBadge({ status }: { status: MatchStatus }) {
   return <Badge variant={variant}>{label}</Badge>
 }
 
-export function TournamentStatusBadge({ status }: { status: TournamentStatus }) {
+export function TournamentStatusBadge({ status, format }: { status: TournamentStatus; format?: TournamentFormat }) {
   const config: Record<TournamentStatus, { label: string; variant: BadgeVariant }> = {
     registration: { label: 'Inscriptions', variant: 'blue' },
-    group_phase: { label: 'Phase de poules', variant: 'yellow' },
+    group_phase: { label: format === 'official' ? 'Qualifications' : 'Phase de poules', variant: 'yellow' },
     bracket_phase: { label: 'Arbre final', variant: 'orange' },
     finished: { label: 'Terminé', variant: 'green' },
   }

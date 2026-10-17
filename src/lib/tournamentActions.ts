@@ -1,10 +1,8 @@
 import { pb } from './pocketbase'
-import type { RecordModel } from 'pocketbase'
 import { generateSingleEliminationBracket } from './bracketGenerator'
 import {
   generateGroupPhase,
-  updateGroupStandings,
-  reverseGroupStandings,
+  recomputeGroupStandings,
   checkAndGenerateFinalBracket,
 } from './groupPhaseGenerator'
 import { placeWinnerInNextMatch } from './bracketGenerator'
@@ -16,100 +14,20 @@ import type {
   GroupStandingWithTeam,
   GroupWithStandings,
   Match,
+  MatchResult,
   MatchWithRelations,
   Team,
   Tournament,
   TrickEvent,
 } from '../types/database'
 import { aggregateTrickEvents } from './tricks'
-import { effectiveCupsToWin } from './cupScoring'
-
-// ── Helpers de mapping ────────────────────────────────────────
-
-function recordToTournament(r: RecordModel): Tournament {
-  return {
-    id: r.id,
-    name: r['name'] as string,
-    format: r['format'] as Tournament['format'],
-    status: r['status'] as Tournament['status'],
-    num_tables: r['num_tables'] as number,
-    cups_per_side: r['cups_per_side'] as number,
-    cups_to_win: effectiveCupsToWin(
-      r['cups_per_side'] as number,
-      r['cups_to_win'] as number | null,
-    ),
-    groups_count: (r['groups_count'] as number | null) || null,
-    teams_advance_per_group: (r['teams_advance_per_group'] as number | null) || null,
-    created_by: (r['created_by'] as string) || null,
-    created: r.created,
-    updated: r.updated,
-  }
-}
-
-function recordToTeam(r: RecordModel): Team {
-  return {
-    id: r.id,
-    tournament_id: r['tournament_id'] as string,
-    name: r['name'] as string,
-    player1_name: r['player1_name'] as string,
-    player2_name: r['player2_name'] as string,
-    player1_id: (r['player1_id'] as string) || null,
-    player2_id: (r['player2_id'] as string) || null,
-    is_bye: r['is_bye'] as boolean,
-    seed: (r['seed'] as number | null) || null,
-    created: r.created,
-  }
-}
-
-function recordToGameTable(r: RecordModel): GameTable {
-  return {
-    id: r.id,
-    tournament_id: r['tournament_id'] as string,
-    name: r['name'] as string,
-    is_available: r['is_available'] as boolean,
-    created: r.created,
-  }
-}
-
-function recordToMatch(r: RecordModel): Match {
-  return {
-    id: r.id,
-    tournament_id: r['tournament_id'] as string,
-    group_id: (r['group_id'] as string) || null,
-    table_id: (r['table_id'] as string) || null,
-    phase: r['phase'] as Match['phase'],
-    round: r['round'] as number,
-    match_number: r['match_number'] as number,
-    team1_id: (r['team1_id'] as string) || null,
-    team2_id: (r['team2_id'] as string) || null,
-    winner_id: (r['winner_id'] as string) || null,
-    winner_cups_remaining: (r['winner_cups_remaining'] as number | null) ?? null,
-    status: r['status'] as Match['status'],
-    next_match_id: (r['next_match_id'] as string) || null,
-    next_match_slot: ((r['next_match_slot'] as number) || null) as 1 | 2 | null,
-    started_at: (r['started_at'] as string) || null,
-    finished_at: (r['finished_at'] as string) || null,
-    created: r.created,
-    // Règles spéciales
-    game_over: (r['game_over'] as boolean) ?? false,
-    balls_back_count: (r['balls_back_count'] as number) ?? 0,
-    bounce_count: (r['bounce_count'] as number) ?? 0,
-    trickshot_count: (r['trickshot_count'] as number) ?? 0,
-    redemption_count: (r['redemption_count'] as number) ?? 0,
-    contre_son_camp_count: (r['contre_son_camp_count'] as number) ?? 0,
-    trick_events: (r['trick_events'] as TrickEvent[] | null) ?? [],
-  }
-}
-
-function recordToMatchWithRelations(r: RecordModel): MatchWithRelations {
-  return {
-    ...recordToMatch(r),
-    team1: r.expand?.['team1_id'] ? recordToTeam(r.expand['team1_id'] as RecordModel) : null,
-    team2: r.expand?.['team2_id'] ? recordToTeam(r.expand['team2_id'] as RecordModel) : null,
-    winner: r.expand?.['winner_id'] ? recordToTeam(r.expand['winner_id'] as RecordModel) : null,
-    table: r.expand?.['table_id'] ? recordToGameTable(r.expand['table_id'] as RecordModel) : null,
-  }
-}
+import { winnerCupsRemaining } from './standings'
+import {
+  recordToGameTable,
+  recordToMatchWithRelations,
+  recordToTeam,
+  recordToTournament,
+} from './records'
 
 // ── Création ──────────────────────────────────────────────────
 
@@ -139,6 +57,13 @@ export async function deleteTournament(tournamentId: string): Promise<void> {
   } catch {
     throw new Error('Suppression refusée. Vérifiez vos droits.')
   }
+}
+
+export async function updateEventInfo(
+  tournamentId: string,
+  info: { location: string; starts_at: string; rules: string },
+): Promise<void> {
+  await pb.collection('tournaments').update(tournamentId, info)
 }
 
 export async function closeTournament(tournamentId: string): Promise<void> {
@@ -230,6 +155,7 @@ export async function startTournament(
     await generateSingleEliminationBracket(tournament, teams, options)
     await pb.collection('tournaments').update(tournament.id, { status: 'bracket_phase' })
   } else {
+    // Poules classiques ou qualifications du tournoi officiel
     await generateGroupPhase(tournament, teams)
     await pb.collection('tournaments').update(tournament.id, { status: 'group_phase' })
   }
@@ -246,20 +172,13 @@ export async function startMatch(matchId: string, tableId: string): Promise<void
   await pb.collection('game_tables').update(tableId, { is_available: false })
 }
 
-export async function finishMatch(
-  match: Match,
-  winnerId: string,
-  winnerCupsRemaining: number,
-  cupsPerSide: number,
-  cupsToWin: number,
-  trickEvents: TrickEvent[] = [],
-): Promise<void> {
+function resultFields(result: MatchResult, tournament: Tournament, trickEvents: TrickEvent[]) {
   const agg = aggregateTrickEvents(trickEvents)
-  await pb.collection('matches').update(match.id, {
-    winner_id: winnerId,
-    winner_cups_remaining: winnerCupsRemaining,
-    status: 'finished',
-    finished_at: new Date().toISOString(),
+  return {
+    winner_id: result.winnerId,
+    winner_cups_remaining: winnerCupsRemaining(result, tournament.cups_per_side),
+    team1_cups: result.team1Cups,
+    team2_cups: result.team2Cups,
     trick_events: trickEvents,
     game_over: agg.game_over,
     balls_back_count: agg.balls_back_count,
@@ -267,67 +186,63 @@ export async function finishMatch(
     trickshot_count: agg.trickshot_count,
     redemption_count: agg.redemption_count,
     contre_son_camp_count: agg.contre_son_camp_count,
+  }
+}
+
+export async function finishMatch(
+  match: Match,
+  result: MatchResult,
+  tournament: Tournament,
+  trickEvents: TrickEvent[] = [],
+): Promise<void> {
+  if (match.phase === 'bracket' && !result.winnerId) {
+    throw new Error('Un match de phase finale doit avoir un vainqueur.')
+  }
+
+  await pb.collection('matches').update(match.id, {
+    ...resultFields(result, tournament, trickEvents),
+    status: 'finished',
+    finished_at: new Date().toISOString(),
   })
 
   if (match.table_id) {
     await pb.collection('game_tables').update(match.table_id, { is_available: true })
   }
 
-  if (match.phase === 'bracket' && match.next_match_id && match.next_match_slot) {
-    await placeWinnerInNextMatch(winnerId, match.next_match_id, match.next_match_slot)
+  if (match.phase === 'bracket' && result.winnerId && match.next_match_id && match.next_match_slot) {
+    await placeWinnerInNextMatch(result.winnerId, match.next_match_id, match.next_match_slot)
   }
 
-  if (match.phase === 'group') {
-    const updatedMatch = { ...match, winner_id: winnerId, winner_cups_remaining: winnerCupsRemaining }
-    await updateGroupStandings(updatedMatch, cupsPerSide, cupsToWin)
-
-    const tournamentRecord = await pb.collection('tournaments').getOne(match.tournament_id, { requestKey: null })
-    await checkAndGenerateFinalBracket(recordToTournament(tournamentRecord))
+  if (match.phase === 'group' && match.group_id) {
+    await recomputeGroupStandings(tournament, match.group_id)
+    await checkAndGenerateFinalBracket(tournament)
   }
 }
 
 export async function editMatchResult(
   match: Match,
-  newWinnerId: string,
-  newCupsRemaining: number,
-  cupsPerSide: number,
-  cupsToWin: number,
+  result: MatchResult,
+  tournament: Tournament,
   trickEvents: TrickEvent[] = [],
 ): Promise<void> {
-  const oldWinnerId = match.winner_id
-  const agg = aggregateTrickEvents(trickEvents)
+  if (match.phase === 'bracket' && !result.winnerId) {
+    throw new Error('Un match de phase finale doit avoir un vainqueur.')
+  }
 
-  await pb.collection('matches').update(match.id, {
-    winner_id: newWinnerId,
-    winner_cups_remaining: newCupsRemaining,
-    trick_events: trickEvents,
-    game_over: agg.game_over,
-    balls_back_count: agg.balls_back_count,
-    bounce_count: agg.bounce_count,
-    trickshot_count: agg.trickshot_count,
-    redemption_count: agg.redemption_count,
-    contre_son_camp_count: agg.contre_son_camp_count,
-  })
+  await pb.collection('matches').update(match.id, resultFields(result, tournament, trickEvents))
 
-  const winnerChanged = newWinnerId !== oldWinnerId
+  const winnerChanged = result.winnerId !== match.winner_id
 
-  if (match.phase === 'bracket' && winnerChanged && match.next_match_id && match.next_match_slot) {
+  if (match.phase === 'bracket' && winnerChanged && result.winnerId && match.next_match_id && match.next_match_slot) {
     const nextMatch = await pb.collection('matches').getOne(match.next_match_id, { fields: 'id,status', requestKey: null })
     if (nextMatch && nextMatch['status'] !== 'in_progress' && nextMatch['status'] !== 'finished') {
       const field = match.next_match_slot === 1 ? 'team1_id' : 'team2_id'
-      await pb.collection('matches').update(match.next_match_id, { [field]: newWinnerId })
+      await pb.collection('matches').update(match.next_match_id, { [field]: result.winnerId })
     }
   }
 
   if (match.phase === 'group' && match.group_id) {
-    if (oldWinnerId && match.winner_cups_remaining !== null) {
-      await reverseGroupStandings(match, cupsPerSide, cupsToWin)
-    }
-    await updateGroupStandings(
-      { ...match, winner_id: newWinnerId, winner_cups_remaining: newCupsRemaining },
-      cupsPerSide,
-      cupsToWin,
-    )
+    await recomputeGroupStandings(tournament, match.group_id)
   }
 }
 
@@ -380,20 +295,9 @@ export async function fetchGroupsWithStandings(tournamentId: string): Promise<Gr
     const standings: GroupStandingWithTeam[] = standingRecords
       .filter((s) => s['group_id'] === group.id)
       .map((s) => {
-        const teamRec = s.expand?.['team_id'] as RecordModel | undefined
+        const teamRec = s.expand?.['team_id']
         const team: Team = teamRec
-          ? {
-              id: teamRec.id,
-              tournament_id: teamRec['tournament_id'] as string,
-              name: teamRec['name'] as string,
-              player1_name: teamRec['player1_name'] as string,
-              player2_name: teamRec['player2_name'] as string,
-              player1_id: (teamRec['player1_id'] as string) || null,
-              player2_id: (teamRec['player2_id'] as string) || null,
-              is_bye: teamRec['is_bye'] as boolean,
-              seed: (teamRec['seed'] as number | null) || null,
-              created: teamRec.created,
-            }
+          ? recordToTeam(teamRec)
           : {
               id: s['team_id'] as string,
               tournament_id: tournamentId,
@@ -413,6 +317,7 @@ export async function fetchGroupsWithStandings(tournamentId: string): Promise<Gr
           team_id: s['team_id'] as string,
           played: s['played'] as number,
           wins: s['wins'] as number,
+          draws: (s['draws'] as number) ?? 0,
           losses: s['losses'] as number,
           cups_for: s['cups_for'] as number,
           cups_against: s['cups_against'] as number,

@@ -34,7 +34,8 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
       />
 
       {/* Panel — bottom sheet sur mobile, centré sur desktop */}
-      <div className="relative w-full sm:max-w-md bg-zinc-900 border border-zinc-700 rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl animate-slide-up">
+      {/* Hauteur bornée + défilement : le fond de page est bloqué pendant l'ouverture. */}
+      <div className="relative w-full sm:max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain bg-zinc-950 border border-zinc-700 rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl animate-slide-up">
         {title && (
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-bold text-white">{title}</h2>

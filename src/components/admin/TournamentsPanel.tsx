@@ -6,7 +6,13 @@ import { useAuth } from '../../context/AuthContext'
 import { Button } from '../ui/Button'
 import { TournamentStatusBadge } from '../ui/Badge'
 import type { Tournament } from '../../types/database'
-import { effectiveCupsToWin } from '../../lib/cupScoring'
+import { recordToTournament } from '../../lib/records'
+
+const FORMAT_LABEL: Record<Tournament['format'], string> = {
+  single_elimination: 'Élimination directe',
+  group_then_elimination: 'Poules + arbre',
+  official: 'Tournoi officiel',
+}
 
 interface TournamentRow extends Tournament {
   winner_name?: string
@@ -94,21 +100,7 @@ export function TournamentsPanel() {
       if (!active) return
 
       const rows: TournamentRow[] = tourData.map((t) => ({
-        id: t.id,
-        name: t['name'] as string,
-        format: t['format'] as Tournament['format'],
-        status: t['status'] as Tournament['status'],
-        num_tables: t['num_tables'] as number,
-        cups_per_side: t['cups_per_side'] as number,
-        cups_to_win: effectiveCupsToWin(
-          t['cups_per_side'] as number,
-          t['cups_to_win'] as number | null,
-        ),
-        groups_count: (t['groups_count'] as number | null) || null,
-        teams_advance_per_group: (t['teams_advance_per_group'] as number | null) || null,
-        created_by: (t['created_by'] as string) || null,
-        created: t.created,
-        updated: t.updated,
+        ...recordToTournament(t),
         winner_name: winnerMap[t.id],
       }))
 
@@ -174,7 +166,7 @@ export function TournamentsPanel() {
                 <div className="min-w-0">
                   <p className="font-bold text-white text-lg leading-tight truncate">{t.name}</p>
                   <p className="text-zinc-500 text-xs mt-1">
-                    {t.format === 'single_elimination' ? 'Élimination directe' : 'Poules + arbre'}
+                    {FORMAT_LABEL[t.format]}
                     {' · '}
                     {t.num_tables} table{t.num_tables > 1 ? 's' : ''}
                   </p>
@@ -184,7 +176,7 @@ export function TournamentsPanel() {
                     </p>
                   )}
                 </div>
-                <TournamentStatusBadge status={t.status} />
+                <TournamentStatusBadge status={t.status} format={t.format} />
               </div>
             </button>
 

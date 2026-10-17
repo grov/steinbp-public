@@ -70,10 +70,10 @@ export function MyTournamentsScreen() {
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
                     ${tournament.status === 'finished'
                       ? 'bg-zinc-800 text-zinc-400'
-                      : 'bg-blue-900/50 text-blue-300'
+                      : 'bg-blue-500/15 text-blue-300'
                     }`}
                   >
-                    {STATUS_LABEL[tournament.status] ?? tournament.status}
+                    {tournament.format === 'official' && tournament.status === 'group_phase' ? 'Qualifs' : (STATUS_LABEL[tournament.status] ?? tournament.status)}
                   </span>
                   <span className="text-zinc-600 text-sm">›</span>
                 </div>

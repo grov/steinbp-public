@@ -1,5 +1,5 @@
-import type { MatchWithRelations, Team } from '../../types/database'
-import { cupScoreForResult } from '../../lib/cupScoring'
+import type { MatchWithRelations, Team, Tournament } from '../../types/database'
+import { matchCups } from '../../lib/standings'
 
 interface TeamStat {
   team: Team
@@ -14,11 +14,10 @@ interface TeamStat {
 interface StatsTabProps {
   teams: Team[]
   matches: MatchWithRelations[]
-  cupsPerSide: number
-  cupsToWin: number
+  tournament: Tournament
 }
 
-export function StatsTab({ teams, matches, cupsPerSide, cupsToWin }: StatsTabProps) {
+export function StatsTab({ teams, matches, tournament }: StatsTabProps) {
   const realTeams = teams.filter((t) => !t.is_bye)
   const finishedMatches = matches.filter((m) => m.status === 'finished')
 
@@ -28,13 +27,13 @@ export function StatsTab({ teams, matches, cupsPerSide, cupsToWin }: StatsTabPro
         (m) => m.team1_id === team.id || m.team2_id === team.id,
       )
       const wins = teamMatches.filter((m) => m.winner_id === team.id).length
+      const losses = teamMatches.filter((m) => m.winner_id && m.winner_id !== team.id).length
       const played = teamMatches.length
 
-      // Gobelets mis : objectif atteint si victoire, tirs réussis si défaite.
       const cupsScored = teamMatches.reduce((sum, m) => {
-        if (m.winner_cups_remaining === null) return sum
-        const score = cupScoreForResult(cupsPerSide, cupsToWin, m.winner_cups_remaining)
-        return sum + (m.winner_id === team.id ? score.winnerFor : score.loserFor)
+        const cups = matchCups(m, tournament)
+        if (!cups) return sum
+        return sum + (m.team1_id === team.id ? cups.team1 : cups.team2)
       }, 0)
 
       // Gobelets restants : somme des winner_cups_remaining sur les victoires
@@ -47,7 +46,7 @@ export function StatsTab({ teams, matches, cupsPerSide, cupsToWin }: StatsTabPro
         team,
         played,
         wins,
-        losses: played - wins,
+        losses,
         ratio: played > 0 ? wins / played : 0,
         cupsScored,
         cupsRemaining,

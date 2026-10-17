@@ -1,5 +1,8 @@
 import { MatchStatusBadge } from '../ui/Badge'
-import type { GameTable, MatchWithRelations } from '../../types/database'
+import type { GameTable, MatchWithRelations, Tournament } from '../../types/database'
+import { ScorePill, matchSides } from './ScorePill'
+import { MatchTimer, isTimedMatch } from './MatchTimer'
+import { roundLabel } from './BracketView'
 
 interface MatchCardProps {
   match: MatchWithRelations
@@ -8,8 +11,9 @@ interface MatchCardProps {
   onEnterScore: (match: MatchWithRelations) => void
   onUnassign?: (match: MatchWithRelations) => void
   onEditScore?: (match: MatchWithRelations) => void
-  cupsPerSide: number
-  cupsToWin: number
+  tournament: Tournament
+  /** Dernier tour de l'arbre, pour nommer les tours (finale, demies…) */
+  maxRound?: number
   compact?: boolean
 }
 
@@ -24,15 +28,20 @@ export function MatchCard({
   onEnterScore,
   onUnassign,
   onEditScore,
-  cupsPerSide,
-  cupsToWin,
+  tournament,
+  maxRound,
   compact = false,
 }: MatchCardProps) {
   const { team1, team2, table, status, winner } = match
   const isFinished = status === 'finished' || status === 'bye'
   const isInProgress = status === 'in_progress'
   const isReady = status === 'ready'
-  const loserCupsRemaining = Math.max(0, cupsPerSide - cupsToWin)
+  const sides = matchSides(match, tournament)
+  const phaseLabel = match.phase === 'bracket'
+    ? (maxRound ? roundLabel(match.round, maxRound) : `Tour ${match.round}`)
+    : tournament.format === 'official'
+      ? `Qualifs · tour ${match.round}`
+      : `Poule — M${match.match_number}`
 
   const borderColor = isInProgress
     ? 'border-green-500/50'
@@ -51,9 +60,12 @@ export function MatchCard({
       {/* En-tête : label du round / statut */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-zinc-500 font-medium">
-          {match.phase === 'bracket' ? `Tour ${match.round}` : `Poule — M${match.match_number}`}
+          {phaseLabel}
         </span>
         <div className="flex items-center gap-2">
+          {isTimedMatch(match, tournament) && (
+            <MatchTimer startedAt={match.started_at!} durationMinutes={tournament.match_duration!} className="text-sm" />
+          )}
           {isFinished && status !== 'bye' && onEditScore && (
             <button
               onClick={() => onEditScore(match)}
@@ -76,16 +88,11 @@ export function MatchCard({
           isFinished={isFinished}
         />
 
-        {/* Séparateur central */}
-        {isFinished && winner && match.winner_cups_remaining !== null ? (
-          <div className="flex-shrink-0 flex flex-col items-center gap-0 min-w-[36px]">
-            <span className={`font-black text-xl tabular-nums leading-tight ${winner.id === team1?.id ? 'text-green-400' : 'text-zinc-600'}`}>
-              {winner.id === team1?.id ? match.winner_cups_remaining : loserCupsRemaining}
-            </span>
-            <span className="text-zinc-700 text-[10px] leading-none">🥤</span>
-            <span className={`font-black text-xl tabular-nums leading-tight ${winner.id === team2?.id ? 'text-green-400' : 'text-zinc-600'}`}>
-              {winner.id === team2?.id ? match.winner_cups_remaining : loserCupsRemaining}
-            </span>
+        {/* Score central */}
+        {sides.cups1 !== null ? (
+          <div className="flex-shrink-0 flex items-center gap-1.5">
+            <ScorePill value={sides.cups1} tone={sides.tone1} size="sm" />
+            <ScorePill value={sides.cups2} tone={sides.tone2} size="sm" />
           </div>
         ) : (
           <span className="text-zinc-600 font-bold text-sm flex-shrink-0">VS</span>

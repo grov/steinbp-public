@@ -1,6 +1,6 @@
 // ── Énumérations ──────────────────────────────────────────────
 
-export type TournamentFormat = 'single_elimination' | 'group_then_elimination'
+export type TournamentFormat = 'single_elimination' | 'group_then_elimination' | 'official'
 export type TournamentStatus = 'registration' | 'group_phase' | 'bracket_phase' | 'finished'
 export type MatchStatus = 'pending' | 'ready' | 'in_progress' | 'finished' | 'bye'
 export type MatchPhase = 'group' | 'bracket'
@@ -19,8 +19,24 @@ export interface Tournament {
   groups_count: number | null
   teams_advance_per_group: number | null
   created_by: string | null
+  // Infos d'événement (tous formats)
+  location: string
+  starts_at: string | null
+  rules: string
+  // Tournoi officiel
+  match_duration: number | null
+  scoring: ScoringRules
+  qualified_count: number | null
   created: string
   updated: string
+}
+
+/** Barème de points des qualifications (tournoi officiel). */
+export interface ScoringRules {
+  win: number
+  win_time: number
+  draw: number
+  loss: number
 }
 
 export interface Team {
@@ -58,6 +74,7 @@ export interface GroupStanding {
   team_id: string
   played: number
   wins: number
+  draws: number
   losses: number
   cups_for: number
   cups_against: number
@@ -105,6 +122,9 @@ export interface Match {
   team2_id: string | null
   winner_id: string | null
   winner_cups_remaining: number | null
+  // Gobelets mis par chaque équipe (null = ancien match, voir matchCups)
+  team1_cups: number | null
+  team2_cups: number | null
   status: MatchStatus
   next_match_id: string | null
   next_match_slot: 1 | 2 | null
@@ -207,6 +227,15 @@ export interface CreateTournamentPayload {
   cups_to_win: number
   groups_count?: number
   teams_advance_per_group?: number
+  location?: string
+  starts_at?: string
+  rules?: string
+  match_duration?: number
+  points_win?: number
+  points_win_time?: number
+  points_draw?: number
+  points_loss?: number
+  qualified_count?: number
 }
 
 export interface CreateTeamPayload {
@@ -218,8 +247,9 @@ export interface CreateTeamPayload {
   player2_id?: string | null
 }
 
-export interface ScorePayload {
-  winner_id: string
-  winner_cups_remaining: number
-  special_events?: Partial<SpecialEvents>
+/** Résultat saisi pour un match. winnerId = null : égalité au temps. */
+export interface MatchResult {
+  winnerId: string | null
+  team1Cups: number
+  team2Cups: number
 }

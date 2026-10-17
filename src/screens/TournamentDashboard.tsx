@@ -6,11 +6,12 @@ import { MatchCard } from '../components/tournament/MatchCard'
 import { ScoreModal } from '../components/tournament/ScoreModal'
 import { BracketView } from '../components/tournament/BracketView'
 import { GroupStandings } from '../components/tournament/GroupStandings'
+import { RankingList } from '../components/tournament/RankingList'
 import { SettingsTab } from '../components/tournament/SettingsTab'
 import { StatsTab } from '../components/tournament/StatsTab'
 import { TournamentStatusBadge } from '../components/ui/Badge'
 import { useAuth } from '../context/AuthContext'
-import type { MatchWithRelations, TrickEvent } from '../types/database'
+import type { MatchResult, MatchWithRelations, Tournament, TrickEvent } from '../types/database'
 
 type Tab = 'queue' | 'bracket' | 'standings' | 'stats' | 'config'
 
@@ -49,23 +50,18 @@ export function TournamentDashboard() {
   const pendingMatches = matches.filter((m) => m.status === 'pending')
   const finishedMatches = matches.filter((m) => m.status === 'finished')
 
-  const showStandingsTab = tournament.format === 'group_then_elimination'
+  const isOfficial = tournament.format === 'official'
+  const showStandingsTab = tournament.format === 'group_then_elimination' || isOfficial
+  const maxRound = Math.max(0, ...matches.filter((m) => m.phase === 'bracket').map((m) => m.round))
 
   async function handleAssignTable(matchId: string, tableId: string) {
     await startMatch(matchId, tableId)
     silentReload()
   }
 
-  async function handleEnterScore(winnerId: string, cupsRemaining: number, trickEvents: TrickEvent[]) {
+  async function handleEnterScore(result: MatchResult, trickEvents: TrickEvent[]) {
     if (!scoreMatch) return
-    await finishMatch(
-      scoreMatch,
-      winnerId,
-      cupsRemaining,
-      tournament!.cups_per_side,
-      tournament!.cups_to_win,
-      trickEvents,
-    )
+    await finishMatch(scoreMatch, result, tournament!, trickEvents)
     silentReload()
   }
 
@@ -74,16 +70,9 @@ export function TournamentDashboard() {
     silentReload()
   }
 
-  async function handleEditScore(winnerId: string, cupsRemaining: number, trickEvents: TrickEvent[]) {
+  async function handleEditScore(result: MatchResult, trickEvents: TrickEvent[]) {
     if (!editMatch) return
-    await editMatchResult(
-      editMatch,
-      winnerId,
-      cupsRemaining,
-      tournament!.cups_per_side,
-      tournament!.cups_to_win,
-      trickEvents,
-    )
+    await editMatchResult(editMatch, result, tournament!, trickEvents)
     silentReload()
   }
 
@@ -108,7 +97,7 @@ export function TournamentDashboard() {
               <h1 className="text-xl font-bold">{tournament.name}</h1>
             </div>
             <div className="flex items-center gap-3 text-xs text-zinc-500">
-              <TournamentStatusBadge status={tournament.status} />
+              <TournamentStatusBadge status={tournament.status} format={tournament.format} />
               <span>{realTeams.length} équipes</span>
               <span>{tables.length} tables</span>
             </div>
@@ -142,7 +131,7 @@ export function TournamentDashboard() {
           </TabButton>
           {showStandingsTab && (
             <TabButton active={activeTab === 'standings'} onClick={() => setActiveTab('standings')}>
-              Classements
+              {isOfficial ? 'Classement' : 'Classements'}
             </TabButton>
           )}
           <TabButton active={activeTab === 'stats'} onClick={() => setActiveTab('stats')}>
@@ -168,14 +157,15 @@ export function TournamentDashboard() {
               onEnterScore={setScoreMatch}
               onUnassign={handleUnassign}
               onEditScore={setEditMatch}
-              cupsPerSide={tournament.cups_per_side}
-              cupsToWin={tournament.cups_to_win}
+              tournament={tournament}
+              maxRound={maxRound}
             />
           )}
 
           {activeTab === 'bracket' && (
             <BracketView
               matches={matches}
+              tournament={tournament}
               onMatchClick={(m) => {
                 if (m.status === 'in_progress') setScoreMatch(m)
               }}
@@ -183,15 +173,22 @@ export function TournamentDashboard() {
           )}
 
           {activeTab === 'standings' && showStandingsTab && (
-            <GroupStandings groups={groups} />
+            isOfficial ? (
+              groups[0] ? (
+                <RankingList standings={groups[0].standings} qualifiedCount={tournament.qualified_count} />
+              ) : (
+                <p className="text-center py-12 text-zinc-600">Le classement apparaîtra au lancement des qualifications.</p>
+              )
+            ) : (
+              <GroupStandings groups={groups} />
+            )
           )}
 
           {activeTab === 'stats' && (
             <StatsTab
               teams={teams}
               matches={matches}
-              cupsPerSide={tournament.cups_per_side}
-              cupsToWin={tournament.cups_to_win}
+              tournament={tournament}
             />
           )}
 
@@ -216,8 +213,7 @@ export function TournamentDashboard() {
       <ScoreModal
         key={scoreMatch?.id ?? 'score-closed'}
         match={scoreMatch}
-        cupsPerSide={tournament.cups_per_side}
-        cupsToWin={tournament.cups_to_win}
+        tournament={tournament}
         onConfirm={handleEnterScore}
         onClose={() => setScoreMatch(null)}
       />
@@ -226,8 +222,7 @@ export function TournamentDashboard() {
       <ScoreModal
         key={(editMatch?.id ?? 'edit-closed') + '-edit'}
         match={editMatch}
-        cupsPerSide={tournament.cups_per_side}
-        cupsToWin={tournament.cups_to_win}
+        tournament={tournament}
         editMode
         onConfirm={handleEditScore}
         onClose={() => setEditMatch(null)}
@@ -248,8 +243,8 @@ function QueueView({
   onEnterScore,
   onUnassign,
   onEditScore,
-  cupsPerSide,
-  cupsToWin,
+  tournament,
+  maxRound,
 }: {
   inProgress: MatchWithRelations[]
   ready: MatchWithRelations[]
@@ -260,8 +255,8 @@ function QueueView({
   onEnterScore: (m: MatchWithRelations) => void
   onUnassign: (m: MatchWithRelations) => void
   onEditScore: (m: MatchWithRelations) => void
-  cupsPerSide: number
-  cupsToWin: number
+  tournament: Tournament
+  maxRound: number
 }) {
   const tables = availableTables.filter(Boolean) as NonNullable<MatchWithRelations['table']>[]
   const allDone = inProgress.length === 0 && ready.length === 0 && pending.length === 0
@@ -279,8 +274,8 @@ function QueueView({
               onAssignTable={onAssignTable}
               onEnterScore={onEnterScore}
               onUnassign={onUnassign}
-              cupsPerSide={cupsPerSide}
-              cupsToWin={cupsToWin}
+              tournament={tournament}
+              maxRound={maxRound}
             />
           ))}
         </Section>
@@ -296,8 +291,8 @@ function QueueView({
               availableTables={tables}
               onAssignTable={onAssignTable}
               onEnterScore={onEnterScore}
-              cupsPerSide={cupsPerSide}
-              cupsToWin={cupsToWin}
+              tournament={tournament}
+              maxRound={maxRound}
             />
           ))}
         </Section>
@@ -313,8 +308,8 @@ function QueueView({
               availableTables={tables}
               onAssignTable={onAssignTable}
               onEnterScore={onEnterScore}
-              cupsPerSide={cupsPerSide}
-              cupsToWin={cupsToWin}
+              tournament={tournament}
+              maxRound={maxRound}
               compact
             />
           ))}
@@ -339,8 +334,8 @@ function QueueView({
               onAssignTable={() => {}}
               onEnterScore={() => {}}
               onEditScore={onEditScore}
-              cupsPerSide={cupsPerSide}
-              cupsToWin={cupsToWin}
+              tournament={tournament}
+              maxRound={maxRound}
               compact
             />
           ))}

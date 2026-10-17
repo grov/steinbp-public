@@ -2,7 +2,9 @@ import { useParams } from 'react-router-dom'
 import { useTournament } from '../hooks/useTournament'
 import { BracketView } from '../components/tournament/BracketView'
 import { GroupStandings } from '../components/tournament/GroupStandings'
-import type { MatchWithRelations } from '../types/database'
+import { RankingList } from '../components/tournament/RankingList'
+import { MatchTimer, isTimedMatch } from '../components/tournament/MatchTimer'
+import type { MatchWithRelations, Tournament } from '../types/database'
 
 /**
  * Écran public (TV / tablette en salle).
@@ -15,7 +17,7 @@ export function PublicDisplayScreen() {
 
   if (loading || !tournament) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-zinc-600 text-2xl">
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-600 text-2xl">
         Chargement…
       </div>
     )
@@ -25,7 +27,7 @@ export function PublicDisplayScreen() {
   const upNext = matches.filter((m) => m.status === 'ready').slice(0, 6)
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden">
+    <div className="min-h-screen bg-zinc-950 text-white overflow-hidden">
       {/* Header */}
       <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -54,7 +56,7 @@ export function PublicDisplayScreen() {
           ) : (
             <div className="flex flex-col gap-4">
               {inProgress.map((m) => (
-                <LiveMatchCard key={m.id} match={m} />
+                <LiveMatchCard key={m.id} match={m} tournament={tournament} />
               ))}
             </div>
           )}
@@ -77,14 +79,21 @@ export function PublicDisplayScreen() {
         {/* Colonne droite : bracket ou classements */}
         <div className="lg:col-span-2 overflow-y-auto p-6">
           {tournament.status === 'group_phase' ? (
-            <>
-              <h2 className="text-white font-black text-xl mb-5">Classements des groupes</h2>
-              <GroupStandings groups={groups} />
-            </>
+            tournament.format === 'official' && groups[0] ? (
+              <>
+                <h2 className="text-white font-black text-xl mb-5">Classement des qualifications</h2>
+                <RankingList standings={groups[0].standings} qualifiedCount={tournament.qualified_count} />
+              </>
+            ) : (
+              <>
+                <h2 className="text-white font-black text-xl mb-5">Classements des groupes</h2>
+                <GroupStandings groups={groups} />
+              </>
+            )
           ) : (
             <>
               <h2 className="text-white font-black text-xl mb-5">Tableau</h2>
-              <BracketView matches={matches} />
+              <BracketView matches={matches} tournament={tournament} />
             </>
           )}
         </div>
@@ -93,13 +102,16 @@ export function PublicDisplayScreen() {
   )
 }
 
-function LiveMatchCard({ match }: { match: MatchWithRelations }) {
+function LiveMatchCard({ match, tournament }: { match: MatchWithRelations; tournament: Tournament }) {
   return (
     <div className="bg-zinc-900 border border-green-500/30 rounded-2xl overflow-hidden">
       {match.table && (
         <div className="bg-green-500/10 px-4 py-2 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-green-300 font-bold text-sm">{match.table.name}</span>
+          <span className="text-green-300 font-bold text-sm flex-1">{match.table.name}</span>
+          {isTimedMatch(match, tournament) && (
+            <MatchTimer startedAt={match.started_at!} durationMinutes={tournament.match_duration!} className="text-base" />
+          )}
         </div>
       )}
       <div className="flex items-center p-4 gap-4">

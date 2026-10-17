@@ -1,6 +1,6 @@
 import { pb } from './pocketbase'
-import type { RecordModel } from 'pocketbase'
-import type { Match, Team, Tournament, TrickEvent } from '../types/database'
+import type { Match, Team, Tournament } from '../types/database'
+import { recordToMatch, recordToTeam } from './records'
 
 // ── Utilitaires mathématiques ─────────────────────────────────
 
@@ -20,50 +20,6 @@ function bracketPositions(size: number): number[] {
     result.push(size - 1 - pos)
   }
   return result
-}
-
-function recordToTeam(record: RecordModel): Team {
-  return {
-    id: record.id,
-    tournament_id: record['tournament_id'] as string,
-    name: record['name'] as string,
-    player1_name: record['player1_name'] as string,
-    player2_name: record['player2_name'] as string,
-    player1_id: (record['player1_id'] as string) || null,
-    player2_id: (record['player2_id'] as string) || null,
-    is_bye: record['is_bye'] as boolean,
-    seed: (record['seed'] as number | null) || null,
-    created: record.created,
-  }
-}
-
-function recordToMatch(record: RecordModel): Match {
-  return {
-    id: record.id,
-    tournament_id: record['tournament_id'] as string,
-    group_id: (record['group_id'] as string) || null,
-    table_id: (record['table_id'] as string) || null,
-    phase: record['phase'] as Match['phase'],
-    round: record['round'] as number,
-    match_number: record['match_number'] as number,
-    team1_id: (record['team1_id'] as string) || null,
-    team2_id: (record['team2_id'] as string) || null,
-    winner_id: (record['winner_id'] as string) || null,
-    winner_cups_remaining: (record['winner_cups_remaining'] as number | null) ?? null,
-    status: record['status'] as Match['status'],
-    next_match_id: (record['next_match_id'] as string) || null,
-    next_match_slot: ((record['next_match_slot'] as number) || null) as 1 | 2 | null,
-    started_at: (record['started_at'] as string) || null,
-    finished_at: (record['finished_at'] as string) || null,
-    created: record.created,
-    game_over: (record['game_over'] as boolean) ?? false,
-    balls_back_count: (record['balls_back_count'] as number) ?? 0,
-    bounce_count: (record['bounce_count'] as number) ?? 0,
-    trickshot_count: (record['trickshot_count'] as number) ?? 0,
-    redemption_count: (record['redemption_count'] as number) ?? 0,
-    contre_son_camp_count: (record['contre_son_camp_count'] as number) ?? 0,
-    trick_events: (record['trick_events'] as TrickEvent[] | null) ?? [],
-  }
 }
 
 // ── Génération du bracket élimination directe ─────────────────
@@ -121,9 +77,11 @@ export async function generateSingleEliminationBracket(
       slottedTeams[i] = allTeams[i]
     }
   } else {
+    // positions[slot] = rang de la tête de série placée dans ce slot
+    // (taille 4 : [0, 3, 1, 2] → 1 contre 4, 2 contre 3).
     const positions = bracketPositions(bracketSize)
-    for (let i = 0; i < allTeams.length; i++) {
-      slottedTeams[positions[i]] = allTeams[i]
+    for (let slot = 0; slot < bracketSize; slot++) {
+      slottedTeams[slot] = allTeams[positions[slot]] ?? null
     }
   }
 

@@ -14,6 +14,52 @@
   --zinc-800:     39  39  42;
   --zinc-900:     24  24  27;
   --zinc-950:      9   9  11;
+
+  /* Teintes de texte colorées (valeurs Tailwind par défaut) */
+  --green-300:   134 239 172;
+  --green-400:    74 222 128;
+  --red-300:     252 165 165;
+  --red-400:     248 113 113;
+  --yellow-300:  253 224  71;
+  --yellow-400:  250 204  21;
+  --blue-300:    147 197 253;
+  --blue-400:     96 165 250;
+  --orange-300:  253 186 116;
+  --orange-400:  251 146  60;
+
+  --fw-bold:  700;
+  --fw-black: 900;
+}
+
+/* ── Thème Clair (défaut) ────────────────────────────────────── */
+/* Fond blanc, blocs gris clair, texte quasi noir, graisses affinées. */
+[data-theme="clair"] {
+  color-scheme: light;
+
+  --color-white:  17  17  17;   /* texte principal                   */
+  --zinc-200:     30  30  30;   /* hover / emphasis                  */
+  --zinc-300:     55  55  55;   /* labels                            */
+  --zinc-400:     85  85  85;   /* texte atténué                     */
+  --zinc-500:    110 110 110;   /* texte secondaire                  */
+  --zinc-600:    140 140 140;   /* titres de section, très atténué   */
+  --zinc-700:    214 214 214;   /* bordures, boutons secondaires     */
+  --zinc-800:    226 226 226;   /* fond inputs, séparateurs          */
+  --zinc-900:    238 238 238;   /* fond cartes / blocs               */
+  --zinc-950:    255 255 255;   /* fond page                         */
+
+  --green-300:    21 128  61;
+  --green-400:    22 163  74;
+  --red-300:     185  28  28;
+  --red-400:     220  38  38;
+  --yellow-300:  161  98   7;
+  --yellow-400:  161  98   7;
+  --blue-300:     29  78 216;
+  --blue-400:     37  99 235;
+  --orange-300:  194  65  12;
+  --orange-400:  234  88  12;
+
+  --fw-bold:  600;
+  --fw-black: 700;
 }
 
 /* ── Thème Matrix ────────────────────────────────────────────── */
@@ -144,8 +190,7 @@
   }
 
   body {
-    @apply bg-zinc-950 text-white;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    @apply bg-zinc-950 text-white font-sans;
     overscroll-behavior: none;
   }
 }

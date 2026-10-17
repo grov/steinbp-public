@@ -2,7 +2,7 @@ import { pb, fileUrl } from './pocketbase'
 import type { RecordModel } from 'pocketbase'
 import type { Player, PlayerStats, Tournament, TrickEvent } from '../types/database'
 import { fetchPlayerChallenges, challengeWinnerIsPlayer } from './challengeActions'
-import { effectiveCupsToWin } from './cupScoring'
+import { recordToTournament } from './records'
 
 export interface PlayerTournament {
   tournament: Tournament
@@ -18,26 +18,6 @@ function recordToPlayer(record: RecordModel): Player {
     avatar_url: fileUrl(record, record['avatar'] as string | null),
     status: record['status'] as Player['status'],
     role: record['role'] as Player['role'],
-    created: record.created,
-    updated: record.updated,
-  }
-}
-
-function recordToTournament(record: RecordModel): Tournament {
-  return {
-    id: record.id,
-    name: record['name'] as string,
-    format: record['format'] as Tournament['format'],
-    status: record['status'] as Tournament['status'],
-    num_tables: record['num_tables'] as number,
-    cups_per_side: record['cups_per_side'] as number,
-    cups_to_win: effectiveCupsToWin(
-      record['cups_per_side'] as number,
-      record['cups_to_win'] as number | null,
-    ),
-    groups_count: (record['groups_count'] as number | null) || null,
-    teams_advance_per_group: (record['teams_advance_per_group'] as number | null) || null,
-    created_by: (record['created_by'] as string) || null,
     created: record.created,
     updated: record.updated,
   }

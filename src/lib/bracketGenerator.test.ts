@@ -86,6 +86,12 @@ const tournament: Tournament = {
   groups_count: null,
   teams_advance_per_group: null,
   created_by: 'admin-1',
+  location: '',
+  starts_at: null,
+  rules: '',
+  match_duration: null,
+  scoring: { win: 2, win_time: 2, draw: 1, loss: 0 },
+  qualified_count: null,
   created: '2026-01-01T00:00:00.000Z',
   updated: '2026-01-01T00:00:00.000Z',
 }
@@ -151,6 +157,33 @@ describe('generateSingleEliminationBracket', () => {
     expect(pocketBase.records.matches).toHaveLength(bracketSize - 1)
     expect(matchesInRound(1)).toHaveLength(bracketSize / 2)
     expect(pocketBase.records.teams.filter((team) => team.is_bye)).toHaveLength(bracketSize - count)
+  })
+
+  it('place les têtes de série 1–8, 4–5, 2–7, 3–6', async () => {
+    const teams = makeTeams(8)
+    pocketBase.reset(storedTeams(teams))
+
+    await generateSingleEliminationBracket(tournament, teams)
+
+    expect(matchesInRound(1).map((match) => [match.team1_id, match.team2_id])).toEqual([
+      ['team-1', 'team-8'],
+      ['team-4', 'team-5'],
+      ['team-2', 'team-7'],
+      ['team-3', 'team-6'],
+    ])
+  })
+
+  it('donne les exemptions aux meilleures têtes de série', async () => {
+    const teams = makeTeams(6)
+    pocketBase.reset(storedTeams(teams))
+
+    await generateSingleEliminationBracket(tournament, teams)
+
+    const byeIds = new Set(pocketBase.records.teams.filter((team) => team.is_bye).map((team) => team.id))
+    const exempted = matchesInRound(1)
+      .filter((match) => byeIds.has(match.team1_id as string) || byeIds.has(match.team2_id as string))
+      .map((match) => (byeIds.has(match.team1_id as string) ? match.team2_id : match.team1_id))
+    expect(exempted.sort()).toEqual(['team-1', 'team-2'])
   })
 
   it('fait avancer automatiquement une équipe opposée à une branche BYE/BYE', async () => {

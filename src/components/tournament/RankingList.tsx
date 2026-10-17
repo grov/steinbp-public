@@ -1,0 +1,64 @@
+import type { GroupStandingWithTeam, Team } from '../../types/database'
+import { compareStandings } from '../../lib/standings'
+
+/**
+ * Classement façon tableau officiel : rang (vert qualifié / rouge éliminé),
+ * équipe, matchs joués, points et différence de gobelets. Mon équipe est
+ * surlignée en jaune.
+ */
+export function RankingList({
+  standings,
+  qualifiedCount,
+  myTeamIds = [],
+  onTeamClick,
+}: {
+  standings: GroupStandingWithTeam[]
+  qualifiedCount: number | null
+  myTeamIds?: string[]
+  onTeamClick?: (team: Team) => void
+}) {
+  const sorted = [...standings].sort(compareStandings)
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2 text-sm font-semibold text-white">
+        <span className="w-11 shrink-0" />
+        <div className="flex-1 flex items-center gap-2 px-3">
+          <span className="flex-1" />
+          <span className="w-9 text-center">J</span>
+          <span className="w-10 text-center">PTS</span>
+          <span className="w-10 text-center">+/-</span>
+        </div>
+      </div>
+
+      {sorted.map((standing, index) => {
+        const rank = index + 1
+        const diff = standing.cups_for - standing.cups_against
+        const isMine = myTeamIds.includes(standing.team_id)
+        const rankTone =
+          qualifiedCount === null ? 'bg-black text-paper' : rank <= qualifiedCount ? 'bg-qualified text-paper' : 'bg-loss text-paper'
+
+        return (
+          <div key={standing.id} className="flex items-center gap-2">
+            <span className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center text-base font-semibold tabular-nums ${rankTone}`}>
+              {rank}
+            </span>
+            <button
+              type="button"
+              disabled={!onTeamClick}
+              onClick={() => onTeamClick?.(standing.team)}
+              className={`flex-1 min-w-0 h-11 rounded-xl flex items-center gap-2 px-3 text-left
+                ${isMine ? 'bg-highlight text-black' : 'bg-zinc-900 text-white'}
+                ${onTeamClick ? 'active:scale-98 transition-transform' : ''}`}
+            >
+              <span className="flex-1 min-w-0 truncate font-medium">{standing.team.name || '?'}</span>
+              <span className="w-9 text-center tabular-nums shrink-0">{standing.played}</span>
+              <span className="w-10 text-center tabular-nums font-semibold shrink-0">{standing.points}</span>
+              <span className="w-10 text-center tabular-nums shrink-0">{diff}</span>
+            </button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}

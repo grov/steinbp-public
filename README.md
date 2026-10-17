@@ -176,6 +176,18 @@ Bracket classique : chaque défaite élimine l'équipe. L'application génère a
 ### Poules + arbre final
 Phase de groupes avec classement (victoires, différence de gobelets), suivie d'un bracket d'élimination directe. Le nombre de groupes et les équipes qualifiées par groupe sont configurables.
 
+### ⏱️ Tournoi officiel
+Format inspiré des tournois officiels, pour en finir avec les parties interminables :
+
+- **Qualifications en chacun-contre-chacun**, matchs **chronométrés** (10 min par défaut). Le chrono s'affiche sur le dashboard et l'écran TV.
+- À la fin du temps, l'équipe qui a mis le plus de gobelets gagne **au temps** ; à nombre égal, c'est une **égalité**.
+- **Barème configurable** — par défaut : victoire 3 pts, victoire au temps 2 pts, égalité 1 pt, défaite 0 pt.
+- **Classement** : points, puis différence de gobelets (+/-), puis gobelets mis.
+- **Phase finale** : les N premiers (configurable) jouent un arbre à élimination directe, sans chrono ni match nul. Les mieux classés affrontent les derniers qualifiés et reçoivent les éventuelles exemptions.
+- Le règlement est généré automatiquement à partir des réglages et affiché aux joueurs (**Règles du jeu**), suivi des règles maison éventuelles.
+
+Côté joueur, la page du tournoi met **son équipe** au centre : bandeau de situation (qualifs, éliminés en…, champions), ses matchs avec table, heure et score coloré, sa ligne surlignée dans le classement et le tableau défilant horizontalement.
+
 ---
 
 ## Déroulement d'un tournoi
@@ -394,6 +406,15 @@ Les releases disponibles sont listées sur [github.com/pocketbase/pocketbase/rel
 ---
 
 ## Changelog
+
+### Prochaine version
+- ⏱️ **Tournoi officiel** : qualifs chronométrées en chacun-contre-chacun, barème 3/2/1/0, égalités, arbre final avec têtes de série
+- 📍 **Infos d'événement** pour tous les formats : lieu, date et règles du jeu
+- 🎯 **Page tournoi joueur** repensée autour de son équipe, tableau horizontal avec liaisons sur mobile
+- ☀️ **Thème Clair** par défaut (police Figtree), les autres thèmes restent disponibles depuis le profil
+- 🐛 Têtes de série correctement placées dans l'arbre (1 contre 4, 2 contre 3…)
+- 🐛 Saisie de score : la fenêtre défile désormais quand elle dépasse la hauteur de l'écran
+- 🐛 Classements de poule recalculés à partir des matchs (plus de dérive après modification d'un score)
 
 ### v3.0
 - ⚔️ **Mode Défi** : matchs 1v1 hors tournoi, avec classement tête-à-tête séparé

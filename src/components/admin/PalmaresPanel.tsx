@@ -13,6 +13,8 @@ interface PlayerAgg {
   name: string
   tPlayed: number
   tWins: number
+  // Égalités au temps (tournoi officiel) : ni victoire ni défaite
+  tDraws: number
   dPlayed: number
   dWins: number
 }
@@ -58,7 +60,7 @@ export function PalmaresPanel() {
         const key = refKey(ref)
         let entry = map.get(key)
         if (!entry) {
-          entry = { key, id: ref.id, name: ref.name.trim(), tPlayed: 0, tWins: 0, dPlayed: 0, dWins: 0 }
+          entry = { key, id: ref.id, name: ref.name.trim(), tPlayed: 0, tWins: 0, tDraws: 0, dPlayed: 0, dWins: 0 }
           map.set(key, entry)
         }
         return entry
@@ -92,6 +94,13 @@ export function PalmaresPanel() {
             const a = agg(ref)
             if (a) a.tWins++
           }
+        } else {
+          for (const teamId of [t1, t2]) {
+            for (const ref of teamPlayers.get(teamId) ?? []) {
+              const a = agg(ref)
+              if (a) a.tDraws++
+            }
+          }
         }
       }
 
@@ -123,13 +132,14 @@ export function PalmaresPanel() {
       .map((p) => {
         const played = view === 'tournois' ? p.tPlayed : p.dPlayed
         const wins = view === 'tournois' ? p.tWins : p.dWins
+        const draws = view === 'tournois' ? p.tDraws : 0
         return {
           key: p.key,
           id: p.id,
           name: p.name,
           played,
           wins,
-          losses: played - wins,
+          losses: played - wins - draws,
           ratio: played > 0 ? wins / played : 0,
         }
       })

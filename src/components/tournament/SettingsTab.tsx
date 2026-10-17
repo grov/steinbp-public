@@ -8,6 +8,7 @@ import {
   resetTournament,
   startTournament,
   updateTableName,
+  updateEventInfo,
   updateTeam,
 } from '../../lib/tournamentActions'
 import { pb, fileUrl } from '../../lib/pocketbase'
@@ -95,6 +96,7 @@ export function SettingsTab({
         onTeamOrderChange={setTeamOrderState}
       />
       <TablesSection tables={tables} tournament={tournament} isStarted={isStarted} onRefresh={onRefresh} />
+      <EventInfoSection tournament={tournament} onRefresh={onRefresh} />
     </div>
   )
 }
@@ -112,6 +114,9 @@ function StartTournamentButton({ tournament, teamCount, teamOrderState, teams, o
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const canStart = teamCount >= 2
+  const isOfficial = tournament.format === 'official'
+  const qualifMatches = (teamCount * (teamCount - 1)) / 2
+  const slots = Math.ceil(qualifMatches / Math.max(1, tournament.num_tables))
 
   async function handleStart() {
     setLoading(true)
@@ -138,9 +143,11 @@ function StartTournamentButton({ tournament, teamCount, teamOrderState, teams, o
       <div>
         <h2 className="font-bold text-white">Lancer le tournoi</h2>
         <p className="text-zinc-500 text-sm mt-0.5">
-          {canStart
-            ? `${teamCount} équipes inscrites — prêt à générer le tableau.`
-            : 'Il faut au moins 2 équipes pour démarrer.'}
+          {!canStart
+            ? 'Il faut au moins 2 équipes pour démarrer.'
+            : isOfficial
+              ? `${teamCount} équipes · ${qualifMatches} matchs de qualification, soit environ ${slots} créneau${slots > 1 ? 'x' : ''} de ${tournament.match_duration ?? 10} min sur ${tournament.num_tables} table${tournament.num_tables > 1 ? 's' : ''}.`
+              : `${teamCount} équipes inscrites — prêt à générer le tableau.`}
         </p>
       </div>
       {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -151,7 +158,7 @@ function StartTournamentButton({ tournament, teamCount, teamOrderState, teams, o
         onClick={handleStart}
         disabled={!canStart}
       >
-        🏆 Générer le tableau
+        {isOfficial ? '⏱️ Lancer les qualifications' : '🏆 Générer le tableau'}
       </Button>
     </div>
   )
@@ -404,7 +411,7 @@ function TeamsSection({
         </div>
       )}
 
-      {!isStarted && teams.length >= 2 && (
+      {!isStarted && teams.length >= 2 && tournament.format === 'single_elimination' && (
         <label className="flex items-center gap-3 cursor-pointer mb-2">
           <input
             type="checkbox"
@@ -930,5 +937,67 @@ function EditTableRow({
       <Button variant="ghost" size="md" onClick={onDone}>✕</Button>
       <Button size="md" loading={loading} onClick={handleSave}>✓</Button>
     </div>
+  )
+}
+
+// ── Infos de l'événement ──────────────────────────────────────
+
+/** Valeur pour un champ datetime-local (heure locale) à partir d'une date ISO. */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return ''
+  const date = new Date(iso)
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
+}
+
+function EventInfoSection({ tournament, onRefresh }: { tournament: Tournament; onRefresh: () => void }) {
+  const [location, setLocation] = useState(tournament.location)
+  const [startsAt, setStartsAt] = useState(() => toLocalInput(tournament.starts_at))
+  const [rules, setRules] = useState(tournament.rules)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  async function handleSave() {
+    setSaving(true)
+    setMessage(null)
+    try {
+      await updateEventInfo(tournament.id, {
+        location: location.trim(),
+        starts_at: startsAt ? new Date(startsAt).toISOString() : '',
+        rules: rules.trim(),
+      })
+      setMessage('Enregistré ✓')
+      onRefresh()
+    } catch {
+      setMessage('Erreur lors de l\'enregistrement.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <section className="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 flex flex-col gap-4">
+      <div>
+        <h2 className="font-bold text-white">Infos pour les joueurs</h2>
+        <p className="text-zinc-500 text-sm mt-0.5">Affichées en haut de la page du tournoi.</p>
+      </div>
+      <Input label="Lieu" value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} />
+      <Input label="Date et heure" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="event-rules" className="text-sm font-medium text-zinc-300">Règles du jeu</label>
+        <textarea
+          id="event-rules"
+          value={rules}
+          onChange={(e) => setRules(e.target.value)}
+          maxLength={10000}
+          rows={4}
+          className="rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 px-4 py-3 text-base
+                     focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+        />
+      </div>
+      <div className="flex items-center gap-3">
+        <Button size="md" loading={saving} onClick={handleSave}>Enregistrer</Button>
+        {message && <span className="text-sm text-zinc-400">{message}</span>}
+      </div>
+    </section>
   )
 }

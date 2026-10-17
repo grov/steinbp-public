@@ -1,7 +1,9 @@
 import { pb } from './pocketbase'
 import type { RecordModel } from 'pocketbase'
-import type { Group, Match, Team, Tournament } from '../types/database'
-import { cupScoreForResult } from './cupScoring'
+import type { Group, Team, Tournament } from '../types/database'
+import { computeStandings, roundRobinRounds, type StandingRow } from './standings'
+import { recordToMatch, recordToTeam } from './records'
+import { generateSingleEliminationBracket } from './bracketGenerator'
 
 function recordToGroup(record: RecordModel): Group {
   return {
@@ -12,31 +14,38 @@ function recordToGroup(record: RecordModel): Group {
   }
 }
 
+/**
+ * Répartit les équipes en poules (ou en une seule poule de qualification
+ * pour un tournoi officiel) et crée les matchs chacun-contre-chacun.
+ */
 export async function generateGroupPhase(
   tournament: Tournament,
   teams: Team[],
 ): Promise<void> {
-  const { groups_count, teams_advance_per_group } = tournament
-  if (!groups_count || !teams_advance_per_group) {
+  const realTeams = teams.filter((t) => !t.is_bye)
+  const isOfficial = tournament.format === 'official'
+
+  const groupsCount = isOfficial ? 1 : tournament.groups_count
+  if (!groupsCount || (!isOfficial && !tournament.teams_advance_per_group)) {
     throw new Error('Configuration de poules manquante')
   }
-
-  const realTeams = teams.filter((t) => !t.is_bye)
-  if (realTeams.length < groups_count * 2) {
-    throw new Error('Pas assez d\'équipes pour le nombre de groupes demandé')
+  if (realTeams.length < groupsCount * 2) {
+    throw new Error(isOfficial
+      ? 'Au moins 2 équipes nécessaires'
+      : 'Pas assez d\'équipes pour le nombre de groupes demandé')
   }
 
   // ── 1. Mélanger et répartir les équipes ─────────────────────
   const shuffled = [...realTeams].sort(() => Math.random() - 0.5)
-  const groupTeams: Team[][] = Array.from({ length: groups_count }, () => [])
-  shuffled.forEach((team, i) => { groupTeams[i % groups_count].push(team) })
+  const groupTeams: Team[][] = Array.from({ length: groupsCount }, () => [])
+  shuffled.forEach((team, i) => { groupTeams[i % groupsCount].push(team) })
 
   // ── 2. Créer les groupes ─────────────────────────────────────
   const groupRecords = await Promise.all(
-    Array.from({ length: groups_count }, (_, i) =>
+    Array.from({ length: groupsCount }, (_, i) =>
       pb.collection('groups').create({
         tournament_id: tournament.id,
-        name: `Groupe ${String.fromCharCode(65 + i)}`,
+        name: isOfficial ? 'Qualifications' : `Groupe ${String.fromCharCode(65 + i)}`,
       }, { requestKey: null }),
     ),
   )
@@ -47,7 +56,6 @@ export async function generateGroupPhase(
     const group = groups[g]
     const gTeams = groupTeams[g]
 
-    // Classements initiaux
     await Promise.all(
       gTeams.map((team) =>
         pb.collection('group_standings').create({
@@ -56,6 +64,7 @@ export async function generateGroupPhase(
           team_id: team.id,
           played: 0,
           wins: 0,
+          draws: 0,
           losses: 0,
           cups_for: 0,
           cups_against: 0,
@@ -64,166 +73,133 @@ export async function generateGroupPhase(
       ),
     )
 
-    // Matchs round-robin
+    // Un tour = chaque équipe joue au plus une fois : les matchs d'une même
+    // équipe sont étalés sur toute la phase.
     let matchNumber = 1
-    for (let i = 0; i < gTeams.length; i++) {
-      for (let j = i + 1; j < gTeams.length; j++) {
+    const rounds = roundRobinRounds(gTeams)
+    for (let r = 0; r < rounds.length; r++) {
+      for (const [team1, team2] of rounds[r]) {
         await pb.collection('matches').create({
           tournament_id: tournament.id,
           group_id: group.id,
           phase: 'group',
-          round: 1,
+          round: r + 1,
           match_number: matchNumber++,
-          team1_id: gTeams[i].id,
-          team2_id: gTeams[j].id,
+          team1_id: team1.id,
+          team2_id: team2.id,
           status: 'ready',
-        })
+        }, { requestKey: null })
       }
     }
   }
 }
 
-export async function reverseGroupStandings(
-  match: Match,
-  cupsPerSide: number,
-  cupsToWin: number,
-): Promise<void> {
-  if (!match.group_id || !match.winner_id || match.winner_cups_remaining === null) return
+// ── Classements ───────────────────────────────────────────────
 
-  const loserId = match.winner_id === match.team1_id ? match.team2_id : match.team1_id
-  if (!loserId) return
+/** Recalcule le classement d'une poule à partir de tous ses matchs terminés. */
+export async function recomputeGroupStandings(tournament: Tournament, groupId: string): Promise<void> {
+  const [standingRecords, matchRecords] = await Promise.all([
+    pb.collection('group_standings').getFullList({
+      filter: pb.filter('group_id = {:groupId}', { groupId }),
+      requestKey: null,
+    }),
+    pb.collection('matches').getFullList({
+      filter: pb.filter('group_id = {:groupId} && status = "finished"', { groupId }),
+      requestKey: null,
+    }),
+  ])
 
-  const score = cupScoreForResult(cupsPerSide, cupsToWin, match.winner_cups_remaining)
+  const rows = computeStandings(
+    standingRecords.map((s) => s['team_id'] as string),
+    matchRecords.map(recordToMatch),
+    tournament,
+    tournament.scoring,
+  )
+  const rowByTeam = new Map(rows.map((row) => [row.team_id, row]))
 
-  const standings = await pb.collection('group_standings').getFullList({
-    filter: `group_id = "${match.group_id}" && (team_id = "${match.winner_id}" || team_id = "${loserId}")`,
-    requestKey: null,
-  })
-
-  const winnerStanding = standings.find((s) => s['team_id'] === match.winner_id)
-  const loserStanding = standings.find((s) => s['team_id'] === loserId)
-
-  if (winnerStanding) {
-    await pb.collection('group_standings').update(winnerStanding.id, {
-      played: Math.max(0, (winnerStanding['played'] as number) - 1),
-      wins: Math.max(0, (winnerStanding['wins'] as number) - 1),
-      cups_for: Math.max(0, (winnerStanding['cups_for'] as number) - score.winnerFor),
-      cups_against: Math.max(0, (winnerStanding['cups_against'] as number) - score.winnerAgainst),
-      points: Math.max(0, (winnerStanding['points'] as number) - 2),
-    })
-  }
-
-  if (loserStanding) {
-    await pb.collection('group_standings').update(loserStanding.id, {
-      played: Math.max(0, (loserStanding['played'] as number) - 1),
-      losses: Math.max(0, (loserStanding['losses'] as number) - 1),
-      cups_for: Math.max(0, (loserStanding['cups_for'] as number) - score.loserFor),
-      cups_against: Math.max(0, (loserStanding['cups_against'] as number) - score.loserAgainst),
-    })
-  }
+  await Promise.all(
+    standingRecords.map((standing) => {
+      const { team_id: _teamId, ...values } = rowByTeam.get(standing['team_id'] as string)!
+      return pb.collection('group_standings').update(standing.id, values, { requestKey: null })
+    }),
+  )
 }
 
-export async function updateGroupStandings(
-  match: Match,
-  cupsPerSide: number,
-  cupsToWin: number,
-): Promise<void> {
-  if (!match.group_id || !match.winner_id || match.winner_cups_remaining === null) return
-
-  const loserId = match.winner_id === match.team1_id ? match.team2_id : match.team1_id
-  if (!loserId) return
-
-  const score = cupScoreForResult(cupsPerSide, cupsToWin, match.winner_cups_remaining)
-
-  const standings = await pb.collection('group_standings').getFullList({
-    filter: `group_id = "${match.group_id}" && (team_id = "${match.winner_id}" || team_id = "${loserId}")`,
+/** Classement trié d'une poule (lecture seule, sans requête supplémentaire). */
+async function sortedGroupStandings(tournament: Tournament, groupId: string): Promise<StandingRow[]> {
+  const matchRecords = await pb.collection('matches').getFullList({
+    filter: pb.filter('group_id = {:groupId} && status = "finished"', { groupId }),
     requestKey: null,
   })
-
-  const winnerStanding = standings.find((s) => s['team_id'] === match.winner_id)
-  const loserStanding = standings.find((s) => s['team_id'] === loserId)
-
-  if (winnerStanding) {
-    await pb.collection('group_standings').update(winnerStanding.id, {
-      played: (winnerStanding['played'] as number) + 1,
-      wins: (winnerStanding['wins'] as number) + 1,
-      cups_for: (winnerStanding['cups_for'] as number) + score.winnerFor,
-      cups_against: (winnerStanding['cups_against'] as number) + score.winnerAgainst,
-      points: (winnerStanding['points'] as number) + 2,
-    })
-  }
-
-  if (loserStanding) {
-    await pb.collection('group_standings').update(loserStanding.id, {
-      played: (loserStanding['played'] as number) + 1,
-      losses: (loserStanding['losses'] as number) + 1,
-      cups_for: (loserStanding['cups_for'] as number) + score.loserFor,
-      cups_against: (loserStanding['cups_against'] as number) + score.loserAgainst,
-    })
-  }
+  const standingRecords = await pb.collection('group_standings').getFullList({
+    filter: pb.filter('group_id = {:groupId}', { groupId }),
+    fields: 'team_id',
+    requestKey: null,
+  })
+  return computeStandings(
+    standingRecords.map((s) => s['team_id'] as string),
+    matchRecords.map(recordToMatch),
+    tournament,
+    tournament.scoring,
+  )
 }
+
+// ── Passage à l'arbre final ───────────────────────────────────
 
 export async function checkAndGenerateFinalBracket(
   tournament: Tournament,
 ): Promise<boolean> {
   const result = await pb.collection('matches').getList(1, 1, {
-    filter: `tournament_id = "${tournament.id}" && phase = "group" && status != "finished"`,
+    filter: pb.filter('tournament_id = {:id} && phase = "group" && status != "finished"', { id: tournament.id }),
     requestKey: null,
   })
-
   if (result.totalItems > 0) return false
 
-  const groups = await pb.collection('groups').getFullList({
-    filter: `tournament_id = "${tournament.id}"`,
-    fields: 'id',
+  // Un arbre déjà généré ne doit jamais l'être une seconde fois.
+  const existingBracket = await pb.collection('matches').getList(1, 1, {
+    filter: pb.filter('tournament_id = {:id} && phase = "bracket"', { id: tournament.id }),
     requestKey: null,
   })
+  if (existingBracket.totalItems > 0) return false
 
+  const groups = await pb.collection('groups').getFullList({
+    filter: pb.filter('tournament_id = {:id}', { id: tournament.id }),
+    fields: 'id',
+    sort: '+id',
+    requestKey: null,
+  })
   if (!groups.length) return false
 
-  const qualifiedIds: string[] = []
+  // Ordre des qualifiés = ordre de tête de série (1er = meilleure équipe).
+  let qualifiedIds: string[] = []
 
-  for (const group of groups) {
-    const standings = await pb.collection('group_standings').getFullList({
-      filter: `group_id = "${group.id}"`,
-      fields: 'team_id,points,cups_for,cups_against',
-      requestKey: null,
-    })
-
-    const sorted = [...standings].sort((a, b) => {
-      const bp = (b['points'] as number) - (a['points'] as number)
-      if (bp !== 0) return bp
-      const diffA = (a['cups_for'] as number) - (a['cups_against'] as number)
-      const diffB = (b['cups_for'] as number) - (b['cups_against'] as number)
-      return diffB - diffA
-    })
-
+  if (tournament.format === 'official') {
+    const ranking = await sortedGroupStandings(tournament, groups[0].id)
+    const count = Math.min(tournament.qualified_count || ranking.length, ranking.length)
+    qualifiedIds = ranking.slice(0, count).map((row) => row.team_id)
+  } else {
     const advance = tournament.teams_advance_per_group ?? 2
-    sorted.slice(0, advance).forEach((s) => qualifiedIds.push(s['team_id'] as string))
+    for (const group of groups) {
+      const ranking = await sortedGroupStandings(tournament, group.id)
+      qualifiedIds.push(...ranking.slice(0, advance).map((row) => row.team_id))
+    }
   }
 
   if (qualifiedIds.length < 2) return false
 
-  const teamFilter = qualifiedIds.map((id) => `id = "${id}"`).join(' || ')
-  const qualifiedTeamRecords = await pb.collection('teams').getFullList({
-    filter: teamFilter,
+  const teamRecords = await pb.collection('teams').getFullList({
+    filter: qualifiedIds.map((id) => pb.filter('id = {:id}', { id })).join(' || '),
     requestKey: null,
   })
+  const teamsById = new Map(teamRecords.map((r) => [r.id, recordToTeam(r)]))
 
-  const qualifiedTeams: Team[] = qualifiedTeamRecords.map((r) => ({
-    id: r.id,
-    tournament_id: r['tournament_id'] as string,
-    name: r['name'] as string,
-    player1_name: r['player1_name'] as string,
-    player2_name: r['player2_name'] as string,
-    player1_id: (r['player1_id'] as string) || null,
-    player2_id: (r['player2_id'] as string) || null,
-    is_bye: r['is_bye'] as boolean,
-    seed: (r['seed'] as number | null) || null,
-    created: r.created,
+  const qualifiedTeams: Team[] = qualifiedIds.map((id, index) => ({
+    ...teamsById.get(id)!,
+    // Tournoi officiel : les mieux classés affrontent les derniers qualifiés
+    // et reçoivent les exemptions.
+    seed: tournament.format === 'official' ? index + 1 : null,
   }))
 
-  const { generateSingleEliminationBracket } = await import('./bracketGenerator')
   await generateSingleEliminationBracket(tournament, qualifiedTeams)
 
   await pb.collection('tournaments').update(tournament.id, { status: 'bracket_phase' })

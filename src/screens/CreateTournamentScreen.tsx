@@ -5,6 +5,28 @@ import { createTournament } from '../lib/tournamentActions'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import type { CreateTournamentPayload, TournamentFormat } from '../types/database'
+import { DEFAULT_MATCH_DURATION, OFFICIAL_SCORING } from '../lib/standings'
+
+const OFFICIAL_FIELDS = [
+  'match_duration',
+  'points_win',
+  'points_win_time',
+  'points_draw',
+  'points_loss',
+  'qualified_count',
+] as const
+
+const FORMATS: { value: TournamentFormat; label: string; desc: string; icon: string; wide?: boolean }[] = [
+  {
+    value: 'official',
+    label: 'Tournoi officiel',
+    desc: 'Qualifs chronométrées en chacun-contre-chacun, puis arbre final',
+    icon: '⏱️',
+    wide: true,
+  },
+  { value: 'single_elimination', label: 'Élimination directe', desc: 'Bracket KO classique', icon: '🎯' },
+  { value: 'group_then_elimination', label: 'Poules + Arbre', desc: 'Phase de groupes puis KO', icon: '🏆' },
+]
 
 export function CreateTournamentScreen() {
   const navigate = useNavigate()
@@ -19,7 +41,17 @@ export function CreateTournamentScreen() {
     cups_to_win: 10,
     groups_count: 4,
     teams_advance_per_group: 2,
+    location: '',
+    rules: '',
+    match_duration: DEFAULT_MATCH_DURATION,
+    points_win: OFFICIAL_SCORING.win,
+    points_win_time: OFFICIAL_SCORING.win_time,
+    points_draw: OFFICIAL_SCORING.draw,
+    points_loss: OFFICIAL_SCORING.loss,
+    qualified_count: 8,
   })
+  // Valeur brute du champ datetime-local (heure locale), convertie à l'envoi.
+  const [startsAt, setStartsAt] = useState('')
 
   function set<K extends keyof CreateTournamentPayload>(key: K, value: CreateTournamentPayload[K]) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -36,7 +68,17 @@ export function CreateTournamentScreen() {
       const userId = pb.authStore.model?.id
       if (!userId) throw new Error('Vous devez être connecté pour créer un tournoi.')
 
-      const tournament = await createTournament(form, userId)
+      const payload: CreateTournamentPayload = {
+        ...form,
+        location: form.location?.trim(),
+        rules: form.rules?.trim(),
+        starts_at: startsAt ? new Date(startsAt).toISOString() : undefined,
+      }
+      if (form.format !== 'official') {
+        for (const field of OFFICIAL_FIELDS) delete payload[field]
+      }
+
+      const tournament = await createTournament(payload, userId)
       navigate(`/tournament/${tournament.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la création.')
@@ -72,26 +114,12 @@ export function CreateTournamentScreen() {
         <div>
           <p className="text-sm font-medium text-zinc-300 mb-2">Format</p>
           <div className="grid grid-cols-2 gap-3">
-            {(
-              [
-                {
-                  value: 'single_elimination',
-                  label: 'Élimination directe',
-                  desc: 'Bracket KO classique',
-                  icon: '🎯',
-                },
-                {
-                  value: 'group_then_elimination',
-                  label: 'Poules + Arbre',
-                  desc: 'Phase de groupes puis KO',
-                  icon: '🏆',
-                },
-              ] as { value: TournamentFormat; label: string; desc: string; icon: string }[]
-            ).map((opt) => (
+            {FORMATS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => set('format', opt.value)}
                 className={`p-4 rounded-2xl border-2 text-left transition-all active:scale-98
+                  ${opt.wide ? 'col-span-2' : ''}
                   ${
                     form.format === opt.value
                       ? 'border-brand bg-brand/10'
@@ -105,6 +133,37 @@ export function CreateTournamentScreen() {
             ))}
           </div>
         </div>
+
+        {/* Options tournoi officiel */}
+        {form.format === 'official' && (
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 flex flex-col gap-4">
+            <p className="text-sm font-bold text-zinc-300">Qualifications</p>
+            <NumberStepper
+              label="Durée d'un match (min)"
+              value={form.match_duration ?? DEFAULT_MATCH_DURATION}
+              min={1}
+              max={60}
+              onChange={(v) => set('match_duration', v)}
+            />
+            <NumberStepper
+              label="Équipes qualifiées pour l'arbre"
+              value={form.qualified_count ?? 8}
+              min={2}
+              max={64}
+              onChange={(v) => set('qualified_count', v)}
+            />
+
+            <p className="text-sm font-bold text-zinc-300 pt-2">Barème de points</p>
+            <NumberStepper label="Victoire" value={form.points_win ?? 0} min={0} max={10} onChange={(v) => set('points_win', v)} />
+            <NumberStepper label="Victoire au temps" value={form.points_win_time ?? 0} min={0} max={10} onChange={(v) => set('points_win_time', v)} />
+            <NumberStepper label="Égalité au temps" value={form.points_draw ?? 0} min={0} max={10} onChange={(v) => set('points_draw', v)} />
+            <NumberStepper label="Défaite" value={form.points_loss ?? 0} min={0} max={10} onChange={(v) => set('points_loss', v)} />
+            <p className="text-zinc-500 text-xs leading-relaxed">
+              Chaque équipe affronte toutes les autres. À la fin du temps, l'équipe qui a mis le plus de
+              gobelets gagne « au temps ». La phase finale se joue sans chrono ni match nul.
+            </p>
+          </div>
+        )}
 
         {/* Options poules */}
         {form.format === 'group_then_elimination' && (
@@ -160,6 +219,41 @@ export function CreateTournamentScreen() {
           <p className="text-zinc-500 text-xs leading-relaxed">
             La partie s'arrête dès que l'objectif est atteint. Par défaut, tous les gobelets doivent être mis.
           </p>
+        </div>
+
+        {/* Infos de l'événement */}
+        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 flex flex-col gap-4">
+          <p className="text-sm font-bold text-zinc-300">Infos pour les joueurs (optionnel)</p>
+          <Input
+            label="Lieu"
+            value={form.location ?? ''}
+            onChange={(e) => set('location', e.target.value)}
+            placeholder="Ex : 4 rue Victor Gelez, Paris"
+            maxLength={200}
+          />
+          <Input
+            label="Date et heure"
+            type="datetime-local"
+            value={startsAt}
+            onChange={(e) => setStartsAt(e.target.value)}
+          />
+          <div className="flex flex-col gap-1">
+            <label htmlFor="rules" className="text-sm font-medium text-zinc-300">
+              Règles du jeu
+            </label>
+            <textarea
+              id="rules"
+              value={form.rules ?? ''}
+              onChange={(e) => set('rules', e.target.value)}
+              placeholder={form.format === 'official'
+                ? 'Règles maison en plus du règlement officiel (affiché automatiquement)'
+                : 'Ex : rebonds autorisés, re-rack à 6 et 3…'}
+              maxLength={10000}
+              rows={4}
+              className="rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 px-4 py-3 text-base
+                         focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+            />
+          </div>
         </div>
 
         {error && (
