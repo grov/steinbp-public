@@ -22,3 +22,4 @@ Thumbs.db
 
 # PocketBase — données locales (ne pas committer)
 pocketbase/pb_data/
+*.tsbuildinfo
