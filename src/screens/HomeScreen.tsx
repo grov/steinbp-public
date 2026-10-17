@@ -5,6 +5,7 @@ import { PlayersPanel } from '../components/admin/PlayersPanel'
 import { TournamentsPanel } from '../components/admin/TournamentsPanel'
 import { PalmaresPanel } from '../components/admin/PalmaresPanel'
 import { CustomTab } from '../components/admin/CustomTab'
+import { ViewSwitch } from '../components/ViewSwitch'
 
 type Tab = 'joueurs' | 'tournois' | 'palmares' | 'custom'
 
@@ -37,12 +38,7 @@ export function HomeScreen() {
               </p>
             </div>
             <div className="flex flex-col items-end gap-1.5">
-              <Link
-                to="/profile"
-                className="text-xs text-zinc-400 hover:text-white transition-colors underline underline-offset-2"
-              >
-                Mon profil
-              </Link>
+              <ViewSwitch current="gestion" />
               <Link
                 to="/challenges"
                 className="text-xs text-brand/80 hover:text-brand transition-colors underline underline-offset-2"

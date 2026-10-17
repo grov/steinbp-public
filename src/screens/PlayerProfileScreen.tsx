@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme, THEME_META } from '../context/ThemeContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { ViewSwitch } from '../components/ViewSwitch'
 import type { Player, PlayerStats, Team } from '../types/database'
 import type { AppSettings } from '../types/settings'
 
@@ -106,14 +107,18 @@ export function PlayerProfileScreen() {
     )
   }
 
-  const showBack = isManager || !isSelf
+  const showViewSwitch = isManager && isSelf
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
-      {showBack && (
+      {showViewSwitch ? (
+        <div className="max-w-lg mx-auto px-4 pt-5 flex justify-end">
+          <ViewSwitch current="joueur" />
+        </div>
+      ) : !isSelf && (
         <div className="max-w-lg mx-auto px-4 pt-5">
           <button
-            onClick={() => isManager && isSelf ? navigate('/admin') : navigate(-1)}
+            onClick={() => navigate(-1)}
             className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-white transition-colors"
           >
             ← Retour

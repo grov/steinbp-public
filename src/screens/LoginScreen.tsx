@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Navigate, Link } from 'react-router-dom'
 import { pb } from '../lib/pocketbase'
 import { useAuth } from '../context/AuthContext'
+import { preferredViewHome } from '../components/ViewSwitch'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 
@@ -24,7 +25,7 @@ export function LoginScreen() {
 
   if (authLoading) return <Spinner />
   if (session) {
-    if (isManager) return <Navigate to="/admin" replace />
+    if (isManager) return <Navigate to={preferredViewHome()} replace />
     if (!player || player.status !== 'approved') return <Navigate to="/pending" replace />
     return <Navigate to="/profile" replace />
   }

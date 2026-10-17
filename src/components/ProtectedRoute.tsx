@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { preferredViewHome } from './ViewSwitch'
 
 function Spinner() {
   const [slow, setSlow] = useState(false)
@@ -37,7 +38,7 @@ export function RoleRedirect() {
 
   if (loading) return <Spinner />
   if (!session) return <Navigate to="/login" replace />
-  if (isManager) return <Navigate to="/admin" replace />
+  if (isManager) return <Navigate to={preferredViewHome()} replace />
 
   if (!player || player.status !== 'approved') return <Navigate to="/pending" replace />
 
