@@ -1,7 +1,7 @@
 import { pb } from './pocketbase'
 import type { RecordModel } from 'pocketbase'
 import type { Group, Team, Tournament } from '../types/database'
-import { computeStandings, roundRobinRounds, type StandingRow } from './standings'
+import { computeStandings, qualifiedCountFor, roundRobinRounds, type StandingRow } from './standings'
 import { recordToMatch, recordToTeam } from './records'
 import { generateSingleEliminationBracket } from './bracketGenerator'
 
@@ -175,7 +175,7 @@ export async function checkAndGenerateFinalBracket(
 
   if (tournament.format === 'official') {
     const ranking = await sortedGroupStandings(tournament, groups[0].id)
-    const count = Math.min(tournament.qualified_count || ranking.length, ranking.length)
+    const count = qualifiedCountFor(tournament.qualified_count, ranking.length)
     qualifiedIds = ranking.slice(0, count).map((row) => row.team_id)
   } else {
     const advance = tournament.teams_advance_per_group ?? 2

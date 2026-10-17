@@ -48,7 +48,7 @@ export function CreateTournamentScreen() {
     points_win_time: OFFICIAL_SCORING.win_time,
     points_draw: OFFICIAL_SCORING.draw,
     points_loss: OFFICIAL_SCORING.loss,
-    qualified_count: 8,
+    qualified_count: 0, // 0 = automatique, calculé au lancement des qualifs
   })
   // Valeur brute du champ datetime-local (heure locale), convertie à l'envoi.
   const [startsAt, setStartsAt] = useState('')
@@ -145,13 +145,31 @@ export function CreateTournamentScreen() {
               max={60}
               onChange={(v) => set('match_duration', v)}
             />
-            <NumberStepper
-              label="Équipes qualifiées pour l'arbre"
-              value={form.qualified_count ?? 8}
-              min={2}
-              max={64}
-              onChange={(v) => set('qualified_count', v)}
-            />
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!form.qualified_count}
+                  onChange={(e) => set('qualified_count', e.target.checked ? 0 : 8)}
+                  className="w-5 h-5 rounded border-zinc-600 bg-zinc-900 text-brand accent-brand"
+                />
+                <span className="text-sm text-zinc-300">Qualifiés pour l'arbre : automatique</span>
+              </label>
+              {form.qualified_count ? (
+                <NumberStepper
+                  label="Équipes qualifiées pour l'arbre"
+                  value={form.qualified_count}
+                  min={2}
+                  max={64}
+                  onChange={(v) => set('qualified_count', v)}
+                />
+              ) : (
+                <p className="text-zinc-500 text-xs leading-relaxed">
+                  Calculé au lancement selon les équipes inscrites : 4 qualifiées jusqu'à 8 équipes,
+                  8 jusqu'à 16, 16 jusqu'à 32…
+                </p>
+              )}
+            </div>
 
             <p className="text-sm font-bold text-zinc-300 pt-2">Barème de points</p>
             <NumberStepper label="Victoire" value={form.points_win ?? 0} min={0} max={10} onChange={(v) => set('points_win', v)} />

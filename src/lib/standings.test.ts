@@ -3,9 +3,11 @@ import type { Match } from '../types/database'
 import {
   CLASSIC_SCORING,
   OFFICIAL_SCORING,
+  autoQualifiedCount,
   computeStandings,
   matchCups,
   officialRulesText,
+  qualifiedCountFor,
   resultFromCups,
   roundRobinRounds,
   teamOutcome,
@@ -164,5 +166,24 @@ describe('officialRulesText', () => {
     expect(text).toContain('Égalité au temps : 1 point\n')
     expect(text).toContain('Défaite : 0 point')
     expect(text).toContain('les 8 premières équipes')
+  })
+})
+
+describe('autoQualifiedCount', () => {
+  it('prend la plus grande puissance de 2 strictement inférieure', () => {
+    const cases: [number, number][] = [[2, 2], [3, 2], [4, 2], [5, 4], [8, 4], [9, 8], [12, 8], [16, 8], [17, 16], [32, 16], [33, 32]]
+    for (const [teams, qualified] of cases) expect(autoQualifiedCount(teams), `${teams} équipes`).toBe(qualified)
+  })
+
+  it('laisse le réglage manuel prioritaire, borné au nombre d\'équipes', () => {
+    expect(qualifiedCountFor(null, 12)).toBe(8)
+    expect(qualifiedCountFor(6, 12)).toBe(6)
+    expect(qualifiedCountFor(16, 12)).toBe(12)
+  })
+
+  it('annonce le nombre calculé dans les règles', () => {
+    const tournament = { match_duration: 10, scoring: OFFICIAL_SCORING, qualified_count: null, cups_to_win: 10 }
+    expect(officialRulesText(tournament, 12)).toContain('les 8 premières équipes')
+    expect(officialRulesText(tournament)).toContain('selon le nombre d\'inscrits')
   })
 })

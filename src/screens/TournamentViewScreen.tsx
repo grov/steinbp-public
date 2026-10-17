@@ -40,7 +40,7 @@ export function TournamentViewScreen() {
   const rulesModal = (
     <Modal open={rulesOpen} onClose={() => setRulesOpen(false)} title="Règles du jeu">
       <div className="flex flex-col gap-5 text-sm leading-relaxed whitespace-pre-line text-zinc-300">
-        {isOfficial && <p>{officialRulesText(tournament)}</p>}
+        {isOfficial && <p>{officialRulesText(tournament, teams.filter((t) => !t.is_bye).length)}</p>}
         {tournament.rules && <p>{tournament.rules}</p>}
       </div>
     </Modal>

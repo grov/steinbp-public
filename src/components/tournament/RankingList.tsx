@@ -1,5 +1,5 @@
 import type { GroupStandingWithTeam, Team } from '../../types/database'
-import { compareStandings } from '../../lib/standings'
+import { compareStandings, qualifiedCountFor } from '../../lib/standings'
 
 /**
  * Classement façon tableau officiel : rang (vert qualifié / rouge éliminé),
@@ -13,11 +13,13 @@ export function RankingList({
   onTeamClick,
 }: {
   standings: GroupStandingWithTeam[]
+  /** Réglage du tournoi ; null = calcul automatique selon le nombre d'équipes. */
   qualifiedCount: number | null
   myTeamIds?: string[]
   onTeamClick?: (team: Team) => void
 }) {
   const sorted = [...standings].sort(compareStandings)
+  const cutoff = qualifiedCountFor(qualifiedCount, sorted.length)
 
   return (
     <div className="flex flex-col gap-2">
@@ -35,8 +37,7 @@ export function RankingList({
         const rank = index + 1
         const diff = standing.cups_for - standing.cups_against
         const isMine = myTeamIds.includes(standing.team_id)
-        const rankTone =
-          qualifiedCount === null ? 'bg-black text-paper' : rank <= qualifiedCount ? 'bg-qualified text-paper' : 'bg-loss text-paper'
+        const rankTone = rank <= cutoff ? 'bg-qualified text-paper' : 'bg-loss text-paper'
 
         return (
           <div key={standing.id} className="flex items-center gap-2">

@@ -216,19 +216,43 @@ export function roundRobinRounds<T>(teams: T[]): [T, T][][] {
   return rounds
 }
 
+// ── Qualifiés pour l'arbre final ──────────────────────────────
+
+/**
+ * Nombre automatique de qualifiés : la plus grande puissance de 2 strictement
+ * inférieure au nombre d'équipes (12 équipes → 8). L'arbre est complet, sans
+ * exemption, et les qualifs éliminent toujours au moins une équipe.
+ */
+export function autoQualifiedCount(teamCount: number): number {
+  if (teamCount < 3) return Math.max(teamCount, 0)
+  let size = 2
+  while (size * 2 < teamCount) size *= 2
+  return size
+}
+
+/** Qualifiés effectifs : le réglage du tournoi, sinon le calcul automatique. */
+export function qualifiedCountFor(configured: number | null, teamCount: number): number {
+  return Math.min(configured || autoQualifiedCount(teamCount), teamCount)
+}
+
 // ── Règlement affiché aux joueurs ─────────────────────────────
 
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`
 
-/** Règles du format officiel, générées à partir des réglages du tournoi. */
+/**
+ * Règles du format officiel, générées à partir des réglages du tournoi.
+ * `teamCount` (équipes inscrites) précise le nombre de qualifiés en mode auto.
+ */
 export function officialRulesText(
   tournament: Pick<Tournament, 'match_duration' | 'scoring' | 'qualified_count' | 'cups_to_win'>,
+  teamCount = 0,
 ): string {
   const { scoring, cups_to_win: target } = tournament
   const duration = tournament.match_duration ?? DEFAULT_MATCH_DURATION
-  const qualified = tournament.qualified_count
-    ? `les ${tournament.qualified_count} premières équipes du classement`
-    : 'toutes les équipes'
+  const qualified =
+    tournament.qualified_count || teamCount >= 2
+      ? `les ${qualifiedCountFor(tournament.qualified_count, teamCount || Infinity)} premières équipes du classement`
+      : 'les meilleures équipes du classement (selon le nombre d\'inscrits : 8 sur 12, 16 sur 20…)'
 
   return [
     'Qualifications',

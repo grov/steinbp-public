@@ -183,7 +183,7 @@ Format inspiré des tournois officiels, pour en finir avec les parties intermina
 - À la fin du temps, l'équipe qui a mis le plus de gobelets gagne **au temps** ; à nombre égal, c'est une **égalité**.
 - **Barème configurable** — par défaut : victoire 3 pts, victoire au temps 2 pts, égalité 1 pt, défaite 0 pt.
 - **Classement** : points, puis différence de gobelets (+/-), puis gobelets mis.
-- **Phase finale** : les N premiers (configurable) jouent un arbre à élimination directe, sans chrono ni match nul. Les mieux classés affrontent les derniers qualifiés et reçoivent les éventuelles exemptions.
+- **Phase finale** : les N premiers jouent un arbre à élimination directe, sans chrono ni match nul. Les mieux classés affrontent les derniers qualifiés et reçoivent les éventuelles exemptions. Par défaut, N est automatique : la plus grande puissance de 2 inférieure au nombre d'équipes (8 qualifiés sur 12, 16 sur 20). Il reste réglable à la main.
 - Le règlement est généré automatiquement à partir des réglages et affiché aux joueurs (**Règles du jeu**), suivi des règles maison éventuelles.
 
 Côté joueur, la page du tournoi met **son équipe** au centre : bandeau de situation (qualifs, éliminés en…, champions), ses matchs avec table, heure et score coloré, sa ligne surlignée dans le classement et le tableau défilant horizontalement.
