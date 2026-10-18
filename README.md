@@ -259,6 +259,25 @@ L'application peut être installée directement depuis le navigateur :
 
 Une fois installée, l'app se lance en plein écran sans barre de navigateur, comme une application native.
 
+### APK Android (Capacitor)
+
+L'APK (`android/`, `capacitor.config.ts`) ouvre directement https://steinbp.fr :
+chaque déploiement met donc l'app à jour sur les téléphones, sans réinstaller
+ni publier de mise à jour. Il faut du réseau, comme avec le navigateur.
+
+On ne recompile l'APK que pour changer l'icône, le nom, l'adresse ou une
+permission. Augmenter alors `versionCode` dans `android/app/build.gradle`, puis
+sur Orca :
+
+```bash
+npm run apk
+```
+
+Le script (`scripts/build-apk.sh`) demande le JDK 21 (`~/Android/jdk-21.0.12.1+1`)
+et signe avec `~/Android/keys/steinbp-release.properties`. Ne jamais remplacer
+cette clé : une APK signée avec une autre ne peut pas mettre à jour celle déjà
+installée.
+
 ---
 
 ## Inscription des joueurs
@@ -418,7 +437,11 @@ Les releases disponibles sont listées sur [github.com/pocketbase/pocketbase/rel
 
 ## Changelog
 
-### Prochaine version
+### v4.0
+- 📱 **APK Android** : l'app s'installe comme une vraie application et se met à jour à chaque déploiement
+- 🤝 **Équipes (duos)** : fiche équipe, nom repris d'un tournoi à l'autre, statut « Équipe légendaire »
+- 👤 **Vue Joueur** pour les admins et organisateurs
+- 🎯 Qualifiés pour l'arbre calculés automatiquement, XP des défis allégée (1 XP par victoire)
 - ⏱️ **Tournoi officiel** : qualifs chronométrées en chacun-contre-chacun, barème 3/2/1/0, égalités, arbre final avec têtes de série
 - 📍 **Infos d'événement** pour tous les formats : lieu, date et règles du jeu
 - 🎯 **Page tournoi joueur** repensée autour de son équipe, tableau horizontal avec liaisons sur mobile
