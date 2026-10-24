@@ -460,6 +460,7 @@ function StatsSection({ stats }: { stats: PlayerStats }) {
 function SpecialEventsSection({ stats }: { stats: PlayerStats }) {
   const events = [
     { emoji: '🔄', label: 'Balls Back',      value: stats.balls_back_count      },
+    { emoji: '🏝️', label: 'Islands',         value: stats.island_count          },
     { emoji: '🏓', label: 'Rebonds',         value: stats.bounce_count          },
     { emoji: '🎪', label: 'Trickshots',      value: stats.trickshot_count       },
     { emoji: '💥', label: 'Game Over',       value: stats.game_over_count       },

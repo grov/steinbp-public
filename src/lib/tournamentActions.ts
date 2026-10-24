@@ -187,6 +187,7 @@ function resultFields(result: MatchResult, tournament: Tournament, trickEvents: 
     trick_events: trickEvents,
     game_over: agg.game_over,
     balls_back_count: agg.balls_back_count,
+    island_count: agg.island_count,
     bounce_count: agg.bounce_count,
     trickshot_count: agg.trickshot_count,
     redemption_count: agg.redemption_count,

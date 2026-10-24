@@ -17,6 +17,7 @@ const STAT_OPTIONS: { value: BadgeStat; label: string }[] = [
   { value: 'tournaments_played', label: 'Tournois joués'  },
   { value: 'tournaments_won',    label: 'Tournois gagnés' },
   { value: 'balls_back_count',   label: 'Balls Back'      },
+  { value: 'island_count',       label: 'Islands'         },
   { value: 'bounce_count',       label: 'Rebonds'         },
   { value: 'trickshot_count',    label: 'Trickshots'      },
   { value: 'game_over_count',    label: 'Game Over'       },
@@ -28,7 +29,7 @@ const STAT_OPTIONS: { value: BadgeStat; label: string }[] = [
 const STAT_GROUP_ORDER: BadgeStat[] = [
   'matches_played', 'matches_won', 'win_rate',
   'tournaments_played', 'tournaments_won',
-  'balls_back_count', 'bounce_count', 'trickshot_count', 'game_over_count',
+  'balls_back_count', 'island_count', 'bounce_count', 'trickshot_count', 'game_over_count',
   'redemption_count', 'contre_son_camp_count',
 ]
 const STAT_GROUP_LABEL: Record<BadgeStat, string> = {
@@ -38,6 +39,7 @@ const STAT_GROUP_LABEL: Record<BadgeStat, string> = {
   tournaments_played: '🏟️ Tournois joués',
   tournaments_won:    '🥇 Tournois gagnés',
   balls_back_count:   '🎱 Balls Back',
+  island_count:       '🏝️ Islands',
   bounce_count:       '🏓 Rebonds',
   trickshot_count:    '🎪 Trickshots',
   game_over_count:    '💥 Game Over',
@@ -237,7 +239,7 @@ export function CustomTab() {
           {sortedTiers.length > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1 border-t border-zinc-800">
               {sortedTiers.map(tier => {
-                const exampleStats = { matches_played: tier.min, matches_won: 0, win_rate: 0, tournaments_played: 0, tournaments_won: 0, challenges_played: 0, challenges_won: 0, balls_back_count: 0, bounce_count: 0, trickshot_count: 0, game_over_count: 0, redemption_count: 0, contre_son_camp_count: 0 }
+                const exampleStats = { matches_played: tier.min, matches_won: 0, win_rate: 0, tournaments_played: 0, tournaments_won: 0, challenges_played: 0, challenges_won: 0, balls_back_count: 0, island_count: 0, bounce_count: 0, trickshot_count: 0, game_over_count: 0, redemption_count: 0, contre_son_camp_count: 0 }
                 const xp = computeXp(exampleStats, draft.xp_weights)
                 return (
                   <span key={tier.name} className="text-[10px] px-2 py-0.5 bg-zinc-800 rounded-full text-zinc-400">

@@ -14,6 +14,7 @@ export interface TrickDef {
 export const TRICK_DEFS: TrickDef[] = [
   { type: 'game_over',       emoji: '💥', label: 'Game Over',       description: '2 balles dans le même verre' },
   { type: 'balls_back',      emoji: '🔄', label: 'Balls Back',      description: '2 balles dans des verres différents' },
+  { type: 'island',          emoji: '🏝️', label: 'Island',          description: 'Verre isolé annoncé puis rentré' },
   { type: 'bounce',          emoji: '🏓', label: 'Rebond',          description: 'Rebond sur la table réussi' },
   { type: 'trickshot',       emoji: '🎪', label: 'Trickshot',       description: 'Lancer spécial réussi' },
   { type: 'redemption',      emoji: '🔥', label: 'Redemption',      description: 'Dernier verre rentré pour sauver le match' },
@@ -28,6 +29,7 @@ export function aggregateTrickEvents(events: TrickEvent[]): SpecialEvents {
   const agg: SpecialEvents = {
     game_over: false,
     balls_back_count: 0,
+    island_count: 0,
     bounce_count: 0,
     trickshot_count: 0,
     redemption_count: 0,
@@ -38,6 +40,7 @@ export function aggregateTrickEvents(events: TrickEvent[]): SpecialEvents {
     switch (e.type) {
       case 'game_over':       agg.game_over = true;                break
       case 'balls_back':      agg.balls_back_count      += e.count; break
+      case 'island':          agg.island_count          += e.count; break
       case 'bounce':          agg.bounce_count          += e.count; break
       case 'trickshot':       agg.trickshot_count       += e.count; break
       case 'redemption':      agg.redemption_count      += e.count; break

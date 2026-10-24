@@ -102,6 +102,7 @@ export interface GroupStanding {
 export interface SpecialEvents {
   game_over: boolean
   balls_back_count: number
+  island_count: number
   bounce_count: number
   trickshot_count: number
   redemption_count: number
@@ -115,6 +116,7 @@ export interface SpecialEvents {
 export type TrickType =
   | 'game_over'
   | 'balls_back'
+  | 'island'
   | 'bounce'
   | 'trickshot'
   | 'redemption'
@@ -151,6 +153,7 @@ export interface Match {
   // Règles spéciales (compteurs agrégés, dérivés de trick_events)
   game_over: boolean
   balls_back_count: number
+  island_count: number
   bounce_count: number
   trickshot_count: number
   redemption_count: number
@@ -228,6 +231,7 @@ export interface PlayerStats {
   // Règles spéciales
   game_over_count: number
   balls_back_count: number
+  island_count: number
   bounce_count: number
   trickshot_count: number
   redemption_count: number

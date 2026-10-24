@@ -113,7 +113,7 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
 
   // Tricks attribués au joueur (tournois + défis partagent le même compteur).
   const tricks = {
-    game_over: 0, balls_back: 0, bounce: 0,
+    game_over: 0, balls_back: 0, island: 0, bounce: 0,
     trickshot: 0, redemption: 0, contre_son_camp: 0,
   }
   function addAttributedTricks(events: TrickEvent[]) {
@@ -135,7 +135,7 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
 
     const allMatches = await pb.collection('matches').getFullList({
       filter: `(${teamFilter}) && status = "finished"`,
-      fields: 'id,team1_id,team2_id,winner_id,next_match_id,phase,tournament_id,status,game_over,balls_back_count,bounce_count,trickshot_count,redemption_count,contre_son_camp_count,trick_events',
+      fields: 'id,team1_id,team2_id,winner_id,next_match_id,phase,tournament_id,status,game_over,balls_back_count,island_count,bounce_count,trickshot_count,redemption_count,contre_son_camp_count,trick_events',
       requestKey: null,
     })
 
@@ -159,6 +159,7 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
         // Ancien match sans attribution → compteurs agrégés du match
         tricks.game_over       += m['game_over'] === true ? 1 : 0
         tricks.balls_back      += (m['balls_back_count']      as number) ?? 0
+        tricks.island          += (m['island_count']          as number) ?? 0
         tricks.bounce          += (m['bounce_count']          as number) ?? 0
         tricks.trickshot       += (m['trickshot_count']       as number) ?? 0
         tricks.redemption      += (m['redemption_count']      as number) ?? 0
@@ -187,6 +188,7 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
     challenges_won: challengesWon,
     game_over_count:       tricks.game_over,
     balls_back_count:      tricks.balls_back,
+    island_count:          tricks.island,
     bounce_count:          tricks.bounce,
     trickshot_count:       tricks.trickshot,
     redemption_count:      tricks.redemption,

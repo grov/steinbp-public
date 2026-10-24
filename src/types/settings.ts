@@ -19,6 +19,7 @@ export type BadgeStat = keyof Pick<
   | 'tournaments_played'
   | 'tournaments_won'
   | 'balls_back_count'
+  | 'island_count'
   | 'bounce_count'
   | 'trickshot_count'
   | 'game_over_count'

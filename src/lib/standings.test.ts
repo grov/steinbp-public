@@ -43,6 +43,7 @@ function finished(team1: string, team1Cups: number, team2: string, team2Cups: nu
     created: '',
     game_over: false,
     balls_back_count: 0,
+    island_count: 0,
     bounce_count: 0,
     trickshot_count: 0,
     redemption_count: 0,

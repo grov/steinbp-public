@@ -94,6 +94,7 @@ export function recordToMatch(r: RecordModel): Match {
     // Règles spéciales
     game_over: (r['game_over'] as boolean) ?? false,
     balls_back_count: (r['balls_back_count'] as number) ?? 0,
+    island_count: (r['island_count'] as number) ?? 0,
     bounce_count: (r['bounce_count'] as number) ?? 0,
     trickshot_count: (r['trickshot_count'] as number) ?? 0,
     redemption_count: (r['redemption_count'] as number) ?? 0,

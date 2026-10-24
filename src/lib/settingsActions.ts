@@ -46,6 +46,11 @@ export const DEFAULT_BADGES: BadgeConfig[] = [
   { id: 'comeback',      emoji: '🌀', name: 'Retour de flamme',  desc: '5 Balls Back',           stat: 'balls_back_count',   threshold: 5   },
   { id: 'magnet',        emoji: '🧲', name: 'Maître du retour',  desc: '15 Balls Back',          stat: 'balls_back_count',   threshold: 15  },
 
+  // ── Islands ──────────────────────────────────────────────────
+  { id: 'castaway',      emoji: '🏝️', name: 'Naufragé',          desc: '1ère Island',            stat: 'island_count',       threshold: 1   },
+  { id: 'explorer',      emoji: '🧭', name: 'Explorateur',       desc: '5 Islands',              stat: 'island_count',       threshold: 5   },
+  { id: 'archipelago',   emoji: '🌴', name: 'Archipel',          desc: '15 Islands',             stat: 'island_count',       threshold: 15  },
+
   // ── Rebonds ──────────────────────────────────────────────────
   { id: 'bouncer',       emoji: '🏓', name: 'Rebondisseur',      desc: '5 rebonds réussis',      stat: 'bounce_count',       threshold: 5   },
   { id: 'kangaroo',      emoji: '🦘', name: 'Kangourou',         desc: '15 rebonds réussis',     stat: 'bounce_count',       threshold: 15  },
