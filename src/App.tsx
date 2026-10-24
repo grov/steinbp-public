@@ -58,6 +58,10 @@ export function App() {
             element={<ProfileRoute><NewChallengeScreen /></ProfileRoute>}
           />
           <Route
+            path="/challenges/:id/edit"
+            element={<ProfileRoute><NewChallengeScreen /></ProfileRoute>}
+          />
+          <Route
             path="/my-tournaments"
             element={<ProfileRoute><MyTournamentsScreen /></ProfileRoute>}
           />

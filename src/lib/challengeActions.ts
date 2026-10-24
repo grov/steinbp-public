@@ -24,6 +24,11 @@ export async function createChallenge(payload: CreateChallengePayload): Promise<
   return recordToChallenge(record)
 }
 
+export async function updateChallenge(challengeId: string, payload: CreateChallengePayload): Promise<Challenge> {
+  const record = await pb.collection('challenges').update(challengeId, payload)
+  return recordToChallenge(record)
+}
+
 export async function deleteChallenge(challengeId: string): Promise<void> {
   await pb.collection('challenges').delete(challengeId)
 }
@@ -40,6 +45,11 @@ export async function fetchAllChallenges(): Promise<Challenge[]> {
   } catch {
     return []
   }
+}
+
+export async function fetchChallenge(challengeId: string): Promise<Challenge> {
+  const record = await pb.collection('challenges').getOne(challengeId, { requestKey: null })
+  return recordToChallenge(record)
 }
 
 export async function fetchPlayerChallenges(playerId: string): Promise<Challenge[]> {

@@ -98,7 +98,7 @@ export function ChallengesScreen() {
                     key={c.id}
                     challenge={c}
                     playerId={player.id}
-                    canDelete={c.created_by === player.id}
+                    canManage={c.created_by === player.id}
                     onDelete={() => handleDelete(c.id)}
                   />
                 ))}
@@ -137,8 +137,8 @@ function HeadToHeadRow({ row }: { row: HeadToHead }) {
 }
 
 function ChallengeRow({
-  challenge, playerId, canDelete, onDelete,
-}: { challenge: Challenge; playerId: string; canDelete: boolean; onDelete: () => void }) {
+  challenge, playerId, canManage, onDelete,
+}: { challenge: Challenge; playerId: string; canManage: boolean; onDelete: () => void }) {
   const iWon = challengeWinnerIsPlayer(challenge, playerId)
   const isP1 = challenge.player1_id === playerId
   const myName = isP1 ? challenge.player1_name : challenge.player2_name
@@ -167,14 +167,23 @@ function ChallengeRow({
             {iWon ? '🏆 Victoire' : 'Défaite'} · {new Date(challenge.created).toLocaleDateString('fr-FR')}
           </p>
         </div>
-        {canDelete && (
-          <button
-            onClick={onDelete}
-            className="text-zinc-600 hover:text-red-400 transition-colors text-xs shrink-0 p-1"
-            aria-label="Supprimer le défi"
-          >
-            🗑
-          </button>
+        {canManage && (
+          <div className="flex items-center gap-1 shrink-0">
+            <Link
+              to={`/challenges/${challenge.id}/edit`}
+              className="text-zinc-600 hover:text-brand transition-colors text-xs p-1"
+              aria-label="Modifier le défi"
+            >
+              ✏️
+            </Link>
+            <button
+              onClick={onDelete}
+              className="text-zinc-600 hover:text-red-400 transition-colors text-xs p-1"
+              aria-label="Supprimer le défi"
+            >
+              🗑
+            </button>
+          </div>
         )}
       </div>
 
