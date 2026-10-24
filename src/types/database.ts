@@ -190,6 +190,9 @@ export interface Challenge {
   player2_name: string
   winner_id: string | null
   winner_name: string
+  /** Gobelets mis par chaque joueur (0-0 = score non saisi) */
+  player1_cups: number
+  player2_cups: number
   trick_events: TrickEvent[]
   created_by: string | null
   created: string
@@ -202,6 +205,8 @@ export interface CreateChallengePayload {
   player2_name: string
   winner_id: string | null
   winner_name: string
+  player1_cups: number
+  player2_cups: number
   trick_events: TrickEvent[]
   created_by: string
 }

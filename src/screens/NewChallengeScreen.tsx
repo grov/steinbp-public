@@ -4,10 +4,14 @@ import { useAuth } from '../context/AuthContext'
 import { Button } from '../components/ui/Button'
 import { PlayerSearchInput } from '../components/tournament/PlayerSearchInput'
 import { TrickAttributionPanel, type TrickSlot } from '../components/tournament/TrickAttributionPanel'
+import { CupStepper } from '../components/tournament/ScoreModal'
 import { createChallenge, fetchChallenge, updateChallenge } from '../lib/challengeActions'
 import type { Challenge, TrickEvent } from '../types/database'
 
 type WinnerSide = 'self' | 'opponent'
+
+/** Plateau standard : 10 gobelets par camp. */
+const MAX_CUPS = 10
 
 export function NewChallengeScreen() {
   const { player } = useAuth()
@@ -19,6 +23,8 @@ export function NewChallengeScreen() {
   const [opponentId, setOpponentId] = useState<string | null>(null)
   const [winner, setWinner] = useState<WinnerSide | null>(null)
   const [trickEvents, setTrickEvents] = useState<TrickEvent[]>([])
+  const [selfCups, setSelfCups] = useState(0)
+  const [opponentCups, setOpponentCups] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Challenge | null>(null)
@@ -33,6 +39,8 @@ export function NewChallengeScreen() {
         const p1Won = c.winner_id ? c.winner_id === c.player1_id : c.winner_name === c.player1_name
         setWinner(p1Won ? 'self' : 'opponent')
         setTrickEvents(c.trick_events)
+        setSelfCups(c.player1_cups)
+        setOpponentCups(c.player2_cups)
       })
       .catch(() => setError('Défi introuvable.'))
   }, [editId])
@@ -58,7 +66,13 @@ export function NewChallengeScreen() {
   const selfId = editing?.player1_id ?? player.id
   const selfName = editing?.player1_name ?? player.display_name
   const opponentReady = opponentName.trim().length > 0
-  const canSave = opponentReady && winner !== null && !saving
+  // Score facultatif : s'il est saisi, le vainqueur doit avoir mis plus de gobelets
+  const hasScore = selfCups > 0 || opponentCups > 0
+  const scoreError = hasScore && winner !== null &&
+    (winner === 'self' ? selfCups <= opponentCups : opponentCups <= selfCups)
+    ? 'Le vainqueur doit avoir mis plus de gobelets que son adversaire.'
+    : null
+  const canSave = opponentReady && winner !== null && !scoreError && !saving
 
   const slots: TrickSlot[] = opponentReady
     ? [
@@ -85,6 +99,8 @@ export function NewChallengeScreen() {
       player2_name: opp,
       winner_id: winner === 'self' ? selfId : opponentId,
       winner_name: winner === 'self' ? selfName : opp,
+      player1_cups: selfCups,
+      player2_cups: opponentCups,
       trick_events: events,
       created_by: editing?.created_by ?? player.id,
     }
@@ -141,6 +157,20 @@ export function NewChallengeScreen() {
               <WinnerButton label={selfName} active={winner === 'self'} onClick={() => setWinner('self')} />
               <WinnerButton label={opponentName.trim()} active={winner === 'opponent'} onClick={() => setWinner('opponent')} />
             </div>
+          </section>
+        )}
+
+        {/* Score */}
+        {opponentReady && (
+          <section className="flex flex-col gap-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+              Score <span className="normal-case tracking-normal font-normal text-zinc-600">· gobelets mis (facultatif)</span>
+            </p>
+            <div className="flex flex-col gap-2">
+              <CupStepper label={selfName} value={selfCups} max={MAX_CUPS} onChange={setSelfCups} />
+              <CupStepper label={opponentName.trim()} value={opponentCups} max={MAX_CUPS} onChange={setOpponentCups} />
+            </div>
+            {scoreError && <p className="text-red-400 text-xs">{scoreError}</p>}
           </section>
         )}
 

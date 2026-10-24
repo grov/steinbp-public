@@ -115,7 +115,7 @@ function describeResult(result: MatchResult, match: MatchWithRelations, tourname
     : `Victoire au temps de ${winner?.name ?? '?'}${pts(scoring.win_time)}`
 }
 
-function CupStepper({
+export function CupStepper({
   label,
   value,
   max,

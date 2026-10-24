@@ -11,6 +11,8 @@ function recordToChallenge(r: RecordModel): Challenge {
     player2_name: r['player2_name'] as string,
     winner_id: (r['winner_id'] as string) || null,
     winner_name: (r['winner_name'] as string) || '',
+    player1_cups: (r['player1_cups'] as number) ?? 0,
+    player2_cups: (r['player2_cups'] as number) ?? 0,
     trick_events: (r['trick_events'] as TrickEvent[] | null) ?? [],
     created_by: (r['created_by'] as string) || null,
     created: r.created,

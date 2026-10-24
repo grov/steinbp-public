@@ -143,6 +143,9 @@ function ChallengeRow({
   const isP1 = challenge.player1_id === playerId
   const myName = isP1 ? challenge.player1_name : challenge.player2_name
   const oppName = isP1 ? challenge.player2_name : challenge.player1_name
+  const myCups = isP1 ? challenge.player1_cups : challenge.player2_cups
+  const oppCups = isP1 ? challenge.player2_cups : challenge.player1_cups
+  const hasScore = myCups > 0 || oppCups > 0
 
   // Résumé des tricks (tous joueurs confondus)
   const trickSummary = TRICK_DEFS.map((def) => ({
@@ -164,7 +167,9 @@ function ChallengeRow({
             {oppName}
           </p>
           <p className="text-[11px] text-zinc-600 mt-0.5">
-            {iWon ? '🏆 Victoire' : 'Défaite'} · {new Date(challenge.created).toLocaleDateString('fr-FR')}
+            {iWon ? '🏆 Victoire' : 'Défaite'}
+            {hasScore && <span className="tabular-nums"> {myCups}–{oppCups}</span>}
+            {' · '}{new Date(challenge.created).toLocaleDateString('fr-FR')}
           </p>
         </div>
         {canManage && (
