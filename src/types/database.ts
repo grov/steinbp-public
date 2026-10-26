@@ -228,6 +228,9 @@ export interface Player {
 export interface PlayerStats {
   matches_played: number
   matches_won: number
+  /** Égalités au temps (tournoi officiel) */
+  matches_drawn: number
+  matches_lost: number
   win_rate: number
   tournaments_played: number
   tournaments_won: number

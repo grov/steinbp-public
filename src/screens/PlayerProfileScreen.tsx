@@ -430,6 +430,8 @@ function StatsSection({ stats }: { stats: PlayerStats }) {
       <div className="grid grid-cols-2 gap-3">
         <RpgStatBox icon="⚔️" label="Matchs joués"     value={stats.matches_played} />
         <RpgStatBox icon="🏆" label="Matchs gagnés"    value={stats.matches_won}    highlight />
+        <RpgStatBox icon="🤝" label="Matchs nuls"      value={stats.matches_drawn} />
+        <RpgStatBox icon="💔" label="Matchs perdus"    value={stats.matches_lost} />
         <RpgStatBox icon="🎯" label="Tournois joués"   value={stats.tournaments_played} />
         <RpgStatBox icon="👑" label="Tournois gagnés"  value={stats.tournaments_won}
           highlight={stats.tournaments_won > 0} />

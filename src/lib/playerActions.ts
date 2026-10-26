@@ -126,6 +126,7 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
   // ── Matchs de tournoi ───────────────────────────────────────
   let tournamentMatchesPlayed = 0
   let tournamentMatchesWon = 0
+  let tournamentMatchesDrawn = 0
   let tournamentsWon = 0
   const tournamentIds = [...new Set(teams.map((t) => t['tournament_id'] as string))]
 
@@ -143,6 +144,7 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
     tournamentMatchesWon = allMatches.filter(
       (m) => m['winner_id'] && teamIds.includes(m['winner_id'] as string),
     ).length
+    tournamentMatchesDrawn = allMatches.filter((m) => !m['winner_id']).length
     tournamentsWon = allMatches.filter(
       (m) =>
         m['phase'] === 'bracket' &&
@@ -179,6 +181,8 @@ export async function fetchPlayerStats(playerId: string): Promise<PlayerStats> {
   return {
     matches_played: tournamentMatchesPlayed,
     matches_won: tournamentMatchesWon,
+    matches_drawn: tournamentMatchesDrawn,
+    matches_lost: tournamentMatchesPlayed - tournamentMatchesWon - tournamentMatchesDrawn,
     win_rate: tournamentMatchesPlayed > 0
       ? Math.round((tournamentMatchesWon / tournamentMatchesPlayed) * 100)
       : 0,

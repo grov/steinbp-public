@@ -103,6 +103,8 @@ export interface DuoProfile {
     tournaments_won: number
     matches_played: number
     matches_won: number
+    matches_drawn: number
+    matches_lost: number
     cups_for: number
     cups_against: number
   }
@@ -142,7 +144,7 @@ export async function fetchDuoProfile(duoId: string): Promise<DuoProfile | null>
 
   const empty: DuoProfile = {
     duo, players, tournaments: [], rivals: [],
-    stats: { tournaments_played: 0, tournaments_won: 0, matches_played: 0, matches_won: 0, cups_for: 0, cups_against: 0 },
+    stats: { tournaments_played: 0, tournaments_won: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, cups_for: 0, cups_against: 0 },
   }
   if (teamRecords.length === 0) return empty
 
@@ -174,6 +176,8 @@ export async function fetchDuoProfile(duoId: string): Promise<DuoProfile | null>
     const won = !!match.winner_id && teamIds.has(match.winner_id)
     stats.matches_played++
     if (won) stats.matches_won++
+    else if (!match.winner_id) stats.matches_drawn++
+    else stats.matches_lost++
 
     const tournament = tournamentsById.get(match.tournament_id)
     const cups = tournament ? matchCups(match, tournament) : null

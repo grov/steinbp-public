@@ -5,7 +5,7 @@ import type { PlayerStats } from '../types/database'
 vi.mock('./pocketbase', () => ({ pb: {} }))
 
 const stats = (overrides: Partial<PlayerStats>): PlayerStats => ({
-  matches_played: 0, matches_won: 0, win_rate: 0, tournaments_played: 0, tournaments_won: 0,
+  matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, win_rate: 0, tournaments_played: 0, tournaments_won: 0,
   challenges_played: 0, challenges_won: 0, balls_back_count: 0, island_count: 0, bounce_count: 0, trickshot_count: 0,
   game_over_count: 0, redemption_count: 0, contre_son_camp_count: 0, ...overrides,
 })
