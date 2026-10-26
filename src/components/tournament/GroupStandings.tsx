@@ -36,6 +36,7 @@ export function GroupStandings({ groups }: GroupStandingsProps) {
                     <th className="text-left px-2 py-2">Équipe</th>
                     <th className="text-center px-2 py-2">J</th>
                     <th className="text-center px-2 py-2">V</th>
+                    <th className="text-center px-2 py-2">E</th>
                     <th className="text-center px-2 py-2">D</th>
                     <th className="text-center px-2 py-2">+/-</th>
                     <th className="text-center px-2 py-2 font-bold text-zinc-400">Pts</th>
@@ -60,6 +61,7 @@ export function GroupStandings({ groups }: GroupStandingsProps) {
                         </td>
                         <td className="text-center px-2 py-3 text-zinc-400">{standing.played}</td>
                         <td className="text-center px-2 py-3 text-green-400">{standing.wins}</td>
+                        <td className="text-center px-2 py-3 text-draw">{standing.draws}</td>
                         <td className="text-center px-2 py-3 text-red-400">{standing.losses}</td>
                         <td
                           className={`text-center px-2 py-3 font-mono ${diff > 0 ? 'text-green-400' : diff < 0 ? 'text-red-400' : 'text-zinc-400'}`}

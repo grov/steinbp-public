@@ -5,6 +5,8 @@ interface TeamStat {
   team: Team
   played: number
   wins: number
+  /** Égalités au temps (tournoi officiel) */
+  draws: number
   losses: number
   ratio: number
   cupsScored: number
@@ -28,6 +30,7 @@ export function StatsTab({ teams, matches, tournament }: StatsTabProps) {
       )
       const wins = teamMatches.filter((m) => m.winner_id === team.id).length
       const losses = teamMatches.filter((m) => m.winner_id && m.winner_id !== team.id).length
+      const draws = teamMatches.filter((m) => !m.winner_id).length
       const played = teamMatches.length
 
       const cupsScored = teamMatches.reduce((sum, m) => {
@@ -46,13 +49,14 @@ export function StatsTab({ teams, matches, tournament }: StatsTabProps) {
         team,
         played,
         wins,
+        draws,
         losses,
         ratio: played > 0 ? wins / played : 0,
         cupsScored,
         cupsRemaining,
       }
     })
-    .sort((a, b) => b.wins - a.wins || b.ratio - a.ratio || a.team.name.localeCompare(b.team.name))
+    .sort((a, b) => b.wins - a.wins || b.draws - a.draws || b.ratio - a.ratio || a.team.name.localeCompare(b.team.name))
 
   if (finishedMatches.length === 0) {
     return (
@@ -70,13 +74,14 @@ export function StatsTab({ teams, matches, tournament }: StatsTabProps) {
       </h2>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden overflow-x-auto">
-        <table className="w-full text-sm min-w-[480px]">
+        <table className="w-full text-sm min-w-[520px]">
           <thead>
             <tr className="border-b border-zinc-800 text-zinc-500 text-[11px] uppercase tracking-wider">
               <th className="text-left px-3 py-3 w-8">#</th>
               <th className="text-left px-3 py-3">Équipe</th>
               <th className="text-center px-2 py-3">J</th>
               <th className="text-center px-2 py-3">V</th>
+              <th className="text-center px-2 py-3">E</th>
               <th className="text-center px-2 py-3">D</th>
               <th className="text-center px-2 py-3">%V</th>
               <th className="text-center px-2 py-3" title="Gobelets mis">🎯</th>
@@ -107,6 +112,9 @@ export function StatsTab({ teams, matches, tournament }: StatsTabProps) {
                   <td className="text-center px-2 py-3 text-zinc-400 font-mono text-sm">{s.played}</td>
                   <td className="text-center px-2 py-3 font-bold font-mono text-sm">
                     <span className={s.wins > 0 ? 'text-green-400' : 'text-zinc-600'}>{s.wins}</span>
+                  </td>
+                  <td className="text-center px-2 py-3 font-mono text-sm">
+                    <span className={s.draws > 0 ? 'text-draw' : 'text-zinc-600'}>{s.draws}</span>
                   </td>
                   <td className="text-center px-2 py-3 font-mono text-sm">
                     <span className={s.losses > 0 ? 'text-red-400' : 'text-zinc-600'}>{s.losses}</span>
@@ -146,7 +154,7 @@ export function StatsTab({ teams, matches, tournament }: StatsTabProps) {
       </div>
 
       <p className="text-zinc-700 text-xs text-center">
-        J = joués · V = victoires · D = défaites · %V = ratio · 🎯 = gobelets mis · 🥤 = gobelets restants
+        J = joués · V = victoires · E = égalités · D = défaites · %V = ratio · 🎯 = gobelets mis · 🥤 = gobelets restants
       </p>
     </div>
   )
